@@ -1,5 +1,7 @@
 import asyncio
 import websockets
+from settings import *
+import ssl
 
 from game_manager import *
 
@@ -59,7 +61,10 @@ async def socket_worker(websocket, path):
             id = "unknown_user"
         print("close connection to user: " + id)
 
-start_server = websockets.serve(socket_worker, 'localhost', 5555)
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+ssl_context.load_cert_chain(cert_file)
+
+start_server = websockets.serve(socket_worker, host='', port=5555, ssl=ssl_context)
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
