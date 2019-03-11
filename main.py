@@ -62,7 +62,7 @@ async def socket_worker(websocket, path):
         print("close connection to user: " + id)
 
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain(cert_file)
+ssl_context.load_cert_chain(cert_file , keyfile=key_file)
 
 start_server = websockets.serve(socket_worker, host='', port=5555, ssl=ssl_context)
 
