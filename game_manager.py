@@ -12,7 +12,7 @@ player_games = {}
 
 async def register_user(id, socket):
 
-    if id in player_id_queue:
+    if id in player_id_queue or id in player_games:
         return False
 
     player_id_queue.add(id)
