@@ -6,7 +6,11 @@ server_port = 5556
 db_host = "127.0.0.1"
 db_port = 3306
 
-db_user = "tictactoe"
-dp_pw = ""
+db_user = None
+db_pw = None
+db_db = None
 
-charset = 'utf8mb4'
+db_charset = 'utf8mb4'
+
+# field dimension
+n = 3

@@ -110,7 +110,6 @@ class ConnectionHandler(object):
         del(self.open_connections_by_id[conn.id])
         del(self.open_connections_by_user[conn.user_name])
 
-
     async def new_connection(self,
                              socket: websockets.WebSocketServerProtocol,
                              login_msg: str):
@@ -166,8 +165,6 @@ class ConnectionHandler(object):
                                 "msg": "logged in as temporary user " + name
                             }
                         }))
-
-
 
                         return conn
 
@@ -269,7 +266,38 @@ class ConnectionHandler(object):
             )
 
     async def _on_match_req(self, conn, data):
+        n_open_matches = len(
+            self.match_manager.get_matches_for_user(conn.user_name))
+
+        if n_open_matches >= 5:
+            await conn.websocket.send(
+                json.dumps(
+                    {
+                        "type": "match_request_response",
+                        "data": {
+                            "success": False,
+                            "msg": "you have too many active matches to search for a new one"
+                        }
+                    }
+                )
+            )
+            return
+
         if data['player'] is None:
+            if conn.user_name in self.match_queue:
+                await conn.websocket.send(
+                    json.dumps(
+                        {
+                            "type": "match_request_response",
+                            "data": {
+                                "success": False,
+                                "msg": "you are already searching for a random match"
+                            }
+                        }
+                    )
+                )
+                return
+
             if len(self.match_queue) > 0:
                 # it's a match!
                 user_a = self.match_queue.pop()
@@ -293,6 +321,19 @@ class ConnectionHandler(object):
 
         else:
             opponent = data['player']
+            if opponent == conn.user_name:
+                await conn.websocket.send(
+                    json.dumps(
+                        {
+                            "type": "match_request_response",
+                            "data": {
+                                "success": False,
+                                "msg": "you cannot play against yourself"
+                            }
+                        }
+                    )
+                )
+                return
             try:
                 if len(opponent) <= 16 and '\'' not in opponent and '"' not in opponent:
                     if len(self.user_manager.get_user(opponent)) > 0:
@@ -321,7 +362,6 @@ class ConnectionHandler(object):
                                 }
                             )
                         )
-
 
             except Exception as e:
                 print("error processing match request: " + str(data) + str(e))
