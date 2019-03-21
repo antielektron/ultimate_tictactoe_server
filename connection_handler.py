@@ -132,6 +132,7 @@ class ConnectionHandler(object):
                         "msg": ""
                     }
                 }))
+                await self._on_match_state_req(conn, None)
                 return conn
             await conn.send(json.dumps({
                 "type": "reconnect_response",
