@@ -123,10 +123,12 @@ class ConnectionHandler(object):
             conn = self.reconnect_session(socket, msg['data']['id'])
             if conn is not None:
                 self._add_connection(conn)
-                await conn.send(json.dumps({
+                await socket.send(json.dumps({
                     "type": "reconnect_response",
                     "data": {
                         "success": True,
+                        "id": conn.id,
+                        "user": conn.user_name,
                         "msg": ""
                     }
                 }))
@@ -135,6 +137,8 @@ class ConnectionHandler(object):
                 "type": "reconnect_response",
                 "data": {
                     "success": False,
+                    "id": conn.id,
+                    "user": conn.user_name,
                     "msg": "session not available"
                 }
             }))
