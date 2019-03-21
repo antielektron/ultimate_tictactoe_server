@@ -474,7 +474,7 @@ class ConnectionHandler(object):
     async def handle_message(self, conn, msg_str):
         msg = parse_message(msg_str)
 
-        print("incoming message" + msg)
+        print("incoming message" + str(msg))
 
         if msg is None:
             return None
