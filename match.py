@@ -65,7 +65,9 @@ class Match(object):
             'last_move': self.last_move,
             'game_over': self.game_over,
             'player_won': self.player_won,
-            'active_player': self.player_a_name if self.is_player_a else self.player_b_name
+            'active_player': self.player_a_name if self.is_player_a else self.player_b_name,
+            'player_a': self.player_a_name,
+            'player_b': self.player_b_name
         }
 
         return json.dumps(match_obj)
@@ -95,15 +97,17 @@ class Match(object):
             last_sub_x = self.last_move['sub_x']
             last_sub_y = self.last_move['sub_y']
 
-            if sub_x != last_x and self.global_field[last_sub_y, last_sub_x] == FIELD_EMPTY:
+            if sub_x != last_x and self.global_field[last_y, last_x] == FIELD_EMPTY:
                 # user is not allowed to place everywhere! wrong move!
                 return False
 
-            if sub_y != last_y and self.global_field[last_sub_y, last_sub_x] == FIELD_EMPTY:
+            if sub_y != last_y and self.global_field[last_y, last_x] == FIELD_EMPTY:
                 return False
 
         if self.complete_field[sub_y * self.n + y][sub_x * self.n + x] != FIELD_EMPTY:
             return False
+        
+        return True
 
     def is_full(self, field):
         return not field.__contains__(FIELD_EMPTY)
@@ -136,17 +140,17 @@ class Match(object):
         if x + y == self.n - 1:
             is_sec_diag = True
             for i in range(self.n):
-                if field[i, -i] != val:
+                if field[i, self.n - i - 1] != val:
                     is_sec_diag = False
                     break
 
         return is_col or is_row or is_main_diag or is_sec_diag
 
     def move(self, move_dict):
-        sub_x = move_dict['sub_x']
-        sub_y = move_dict['sub_y']
-        x = move_dict['x']
-        y = move_dict['y']
+        sub_x = int(move_dict['sub_x'])
+        sub_y = int(move_dict['sub_y'])
+        x = int(move_dict['x'])
+        y = int(move_dict['y'])
 
         abs_x = sub_x * self.n + x
         abs_y = sub_y * self.n + y
@@ -154,34 +158,34 @@ class Match(object):
         player_mark = FIELD_USER_A if self.is_player_a else FIELD_USER_B
 
         if not self.is_move_valid(sub_x, sub_y, x, y):
+            print("invalid move")
             return False
 
         # else: move!
         self.complete_field[abs_y, abs_x] = player_mark
 
         # encode move:
-        self.last_move = move_dict
+        self.last_move = {'sub_x': sub_x, 'sub_y': sub_y, 'x': x, 'y': y}
 
         # check whether this indicates changes in the global field:
-        assert self.global_field[sub_y, sub_x] == FIELD_EMPTY
+        if self.global_field[sub_y, sub_x] != FIELD_EMPTY:
+            print("field not empty")
+            return False
 
         subgrid = self.complete_field[sub_y * self.n: (
             sub_y + 1) * self.n, sub_x * self.n: (sub_x + 1) * self.n]
 
         if self.check_win(subgrid, x, y):
-            self.global_field[sub_x, sub_y] = player_mark
+            self.global_field[sub_y, sub_x] = player_mark
+            if self.check_win(self.global_field, sub_x, sub_y):
+                self.game_over = True
+                self.player_won = self.player_a_name if self.is_player_a else self.player_b_name
 
         elif self.is_full(subgrid):
-            self.global_field[sub_x, sub_y] = FIELD_DRAW
-
-        # check global state:
-        if self.check_win(self.global_field, sub_x, sub_y):
-            self.game_over = True
-            self.player_won = self.player_a_name if self.is_player_a else self.player_b_name
-
-        elif self.is_full(self.global_field):
-            self.game_over = True
-            self.player_won = None
+            self.global_field[sub_y, sub_x] = FIELD_DRAW
+            if self.is_full(self.global_field):
+                self.game_over = True
+                self.player_won = None
 
         self.is_player_a = not self.is_player_a
 

@@ -40,6 +40,20 @@ class MatchManager(object):
         query = f"UPDATE matches SET match_state='{match.to_json_state()}', active_user='{match.get_current_player()}', last_active='{now}' WHERE id='{match_id}'"
         DatabaseConnection.global_single_execution(query)
     
+    def apply_move(self, move_data):
+        match = self.get_match(move_data['id'])
+        if match is None:
+            return None
+        
+        if not match.move(move_data):
+            print("error applying match move")
+            return None
+        
+        
+        self.update_match(move_data['id'], match)
+        print("updated match")
+        return match
+    
     def delete_match(self, match_id):
         query = f"DELETE FROM matches WHERE id='{match_id}'"
         DatabaseConnection.global_single_execution(query)

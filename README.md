@@ -109,8 +109,28 @@ response:
     game_over: <true | false>,
     player_won: <null | <player_name>>
     current_player: <null | <player_name>>
+    player_a: "..."
+    player_b: "..."
 }
 ```
+
+
+
+**match**:
+
+```json
+{
+    "type": "match_update",
+    "data": {
+        "id": "...",
+        "match_state": <null| <match_state>>
+    }
+}
+```
+
+
+
+
 
 **new temp session**
 
@@ -129,11 +149,11 @@ server response:
 
 ```json
 {
-    "type": "temp_session_response",
+    "type": "login_response",
     "data": {
         "success": <true|false>,
         "id": "<session-id>", 
-        "message": "..."
+        "msg": "..."
     }
 }
 ```
@@ -163,15 +183,38 @@ server response:
 }
 ```
 
-**register**:
+**login or register**:
 
-TODO
+```json
+{
+    "type": "login",
+    "data": {
+   		"name": "<player_name>",
+   		"pw": "<password>"
+    }
+}
+```
+
+response:
+
+```json
+{
+    "type": "login_response",
+    "data": {
+        "success": <true|false>,
+        "id": "<session-id>", 
+        "msg": "..."
+    }
+}
+```
+
+
 
 
 
 **match_request**:
 
-client
+client (or server for sending invites)
 
 ```json
 {
@@ -194,8 +237,6 @@ server_response:
 }
 ```
 
-
-
 **match_move**:
 
 client
@@ -204,22 +245,11 @@ client
 {
     "type": "move",
     "data": {
+        "id": "match_id",
         "sub_x": "...",
         "sub_y": "...",
         "x": "...",
         "y": "..."
-    }
-}
-```
-
-server response: (maybe useless?)
-
-```json
-{
-    "type": "move_response",
-    "data": {
-        "success": true,
-        "msg": "..."
     }
 }
 ```
@@ -254,4 +284,6 @@ client:
     }
 }
 ```
+
+
 

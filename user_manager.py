@@ -47,19 +47,3 @@ class UserManager(object):
         query = "SELECT name, last_seen FROM users"
         return DatabaseConnection.global_single_query(query)
 
-
-def create_test_manager():
-    import settings
-    DatabaseConnection(settings.db_host,
-                       settings.db_port,
-                       settings.db_user,
-                       settings.db_pw,
-                       settings.db_db,
-                       settings.db_charset)
-    um = UserManager()
-    return um
-
-
-# test routines:
-if __name__ == "__main__":
-    pass

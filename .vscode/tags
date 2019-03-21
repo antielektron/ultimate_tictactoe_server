@@ -1,0 +1,100 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+Base64Decode	../match.py	/^def Base64Decode(jsonDump):$/;"	kind:function	line:13
+Base64Encode	../match.py	/^def Base64Encode(ndarray):$/;"	kind:function	line:9
+DatabaseConnection	../database_connection.py	/^class DatabaseConnection(object):$/;"	kind:class	line:16
+FIELD_DRAW	../match.py	/^FIELD_DRAW = 3$/;"	kind:variable	line:33
+FIELD_EMPTY	../match.py	/^FIELD_EMPTY = 0$/;"	kind:variable	line:30
+FIELD_USER_A	../match.py	/^FIELD_USER_A = 1$/;"	kind:variable	line:31
+FIELD_USER_B	../match.py	/^FIELD_USER_B = 2$/;"	kind:variable	line:32
+GameManager	../game_manager.py	/^class GameManager(object):$/;"	kind:class	line:69
+Match	../match.py	/^class Match(object):$/;"	kind:class	line:36
+MatchManager	../match_manager.py	/^class MatchManager(object):$/;"	kind:class	line:6
+SQLInjectionError	../database_connection.py	/^class SQLInjectionError(Exception):$/;"	kind:class	line:9
+SessionManager	../session_manager.py	/^class SessionManager(object):$/;"	kind:class	line:7
+SimpleDecode	../match.py	/^def SimpleDecode(jsonDump):$/;"	kind:function	line:26
+SimpleEncode	../match.py	/^def SimpleEncode(ndarray):$/;"	kind:function	line:22
+User	../user.py	/^class User(object):$/;"	kind:class	line:1
+UserManager	../user_manager.py	/^class UserManager(object):$/;"	kind:class	line:8
+__init__	../database_connection.py	/^    def __init__(self):$/;"	kind:member	line:10
+__init__	../database_connection.py	/^    def __init__(self,$/;"	kind:member	line:58
+__init__	../game_manager.py	/^    def __init__(self, player_a_id, player_b_id, start_player, socket_a, socket_b):$/;"	kind:member	line:70
+__init__	../match.py	/^    def __init__(self, n, a_begins, player_a_name, player_b_name, json_state=None):$/;"	kind:member	line:37
+__init__	../match_manager.py	/^    def __init__(self):$/;"	kind:member	line:7
+__init__	../session_manager.py	/^    def __init__(self, session_lifespan_timedelta):$/;"	kind:member	line:8
+__init__	../user.py	/^    def __init__(self, id, name):$/;"	kind:member	line:2
+__init__	../user_manager.py	/^    def __init__(self):$/;"	kind:member	line:9
+_on_end_game	../game_manager.py	/^    async def _on_end_game(self, player_id):$/;"	kind:member	line:172
+_on_move	../game_manager.py	/^    async def _on_move(self, player_id, move_data):$/;"	kind:member	line:129
+cert_file	../settings.py	/^cert_file = None$/;"	kind:variable	line:1
+check_win	../match.py	/^    def check_win(self, field, x, y):$/;"	kind:member	line:105
+close	../database_connection.py	/^    def close(self):$/;"	kind:member	line:92
+commit	../database_connection.py	/^    def commit(self):$/;"	kind:member	line:96
+create_database.py	../create_database.py	1;"	kind:file	line:1
+create_new_match	../game_manager.py	/^async def create_new_match():$/;"	kind:function	line:42
+create_session_for_registered_user	../session_manager.py	/^    def create_session_for_registered_user(self, user_name):$/;"	kind:member	line:27
+create_session_for_temp_user	../session_manager.py	/^    def create_session_for_temp_user(self, user_name):$/;"	kind:member	line:38
+create_tables	../create_database.py	/^def create_tables():$/;"	kind:function	line:8
+create_test_manager	../user_manager.py	/^def create_test_manager():$/;"	kind:function	line:51
+create_user	../user_manager.py	/^    def create_user(self, user_name, pw):$/;"	kind:member	line:33
+database_connection.py	../database_connection.py	1;"	kind:file	line:1
+db_charset	../settings.py	/^db_charset = 'utf8mb4'$/;"	kind:variable	line:13
+db_db	../settings.py	/^db_db = "tictactoe"$/;"	kind:variable	line:11
+db_host	../settings.py	/^db_host = "127.0.0.1"$/;"	kind:variable	line:6
+db_port	../settings.py	/^db_port = 3306$/;"	kind:variable	line:7
+db_pw	../settings.py	/^db_pw = "T0eT4cT!c"$/;"	kind:variable	line:10
+db_user	../settings.py	/^db_user = "tictactoe"$/;"	kind:variable	line:9
+delete_session	../session_manager.py	/^    def delete_session(self, session_id):$/;"	kind:member	line:49
+delete_user	../user_manager.py	/^    def delete_user(self, user_name):$/;"	kind:member	line:16
+from_json_state	../match.py	/^    def from_json_state(self, json_state):$/;"	kind:member	line:51
+game_manager.py	../game_manager.py	1;"	kind:file	line:1
+get_all_users	../user_manager.py	/^    def get_all_users(self):$/;"	kind:member	line:46
+get_current_player	../match.py	/^    def get_current_player(self):$/;"	kind:member	line:72
+get_cursor	../database_connection.py	/^    def get_cursor(self):$/;"	kind:member	line:89
+get_id	../user.py	/^    def get_id(self):$/;"	kind:member	line:6
+get_match	../match_manager.py	/^    def get_match(self, id):$/;"	kind:member	line:10
+get_name	../user.py	/^    def get_name(self):$/;"	kind:member	line:9
+get_session_by_id	../session_manager.py	/^    def get_session_by_id(self, session_id):$/;"	kind:member	line:11
+get_session_by_registered_user	../session_manager.py	/^    def get_session_by_registered_user(self, user_name):$/;"	kind:member	line:19
+get_session_by_temp_user	../session_manager.py	/^    def get_session_by_temp_user(self, user_name):$/;"	kind:member	line:23
+get_sql_time	../database_connection.py	/^def get_sql_time(datetime_object):$/;"	kind:function	line:5
+get_user	../user_manager.py	/^    def get_user(self, user_name):$/;"	kind:member	line:12
+global_close	../database_connection.py	/^    def global_close():$/;"	kind:member	line:29
+global_commit	../database_connection.py	/^    def global_commit():$/;"	kind:member	line:34
+global_cursor	../database_connection.py	/^    def global_cursor():$/;"	kind:member	line:24
+global_single_execution	../database_connection.py	/^    def global_single_execution(sql_statement):$/;"	kind:member	line:49
+global_single_query	../database_connection.py	/^    def global_single_query(query):$/;"	kind:member	line:39
+instance	../database_connection.py	/^    instance = None$/;"	kind:variable	line:21
+is_full	../match.py	/^    def is_full(self, field):$/;"	kind:member	line:102
+is_move_valid	../match.py	/^    def is_move_valid(self, sub_x, sub_y, x, y):$/;"	kind:member	line:75
+key_file	../settings.py	/^key_file = None$/;"	kind:variable	line:2
+main.py	../main.py	1;"	kind:file	line:1
+match.py	../match.py	1;"	kind:file	line:1
+match_manager.py	../match_manager.py	1;"	kind:file	line:1
+matchmaking	../game_manager.py	/^async def matchmaking():$/;"	kind:function	line:60
+move	../match.py	/^    def move(self, move_dict):$/;"	kind:member	line:139
+player_games	../game_manager.py	/^player_games = {}$/;"	kind:variable	line:10
+player_id_queue	../game_manager.py	/^player_id_queue = set()$/;"	kind:variable	line:7
+processPlayerMessage	../game_manager.py	/^    async def processPlayerMessage(self, player_id, json_str):$/;"	kind:member	line:108
+process_message	../game_manager.py	/^async def process_message(id, json):$/;"	kind:function	line:37
+register_user	../game_manager.py	/^async def register_user(id, socket):$/;"	kind:function	line:13
+revoke_inactive_sessions	../session_manager.py	/^    def revoke_inactive_sessions(self):$/;"	kind:member	line:53
+server_port	../settings.py	/^server_port = 5556$/;"	kind:variable	line:4
+session_manager.py	../session_manager.py	1;"	kind:file	line:1
+settings.py	../settings.py	1;"	kind:file	line:1
+socket_worker	../main.py	/^async def socket_worker(websocket, path):$/;"	kind:function	line:9
+sockets	../game_manager.py	/^sockets = {}$/;"	kind:variable	line:8
+ssl_context	../main.py	/^ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)$/;"	kind:variable	line:64
+startMatch	../game_manager.py	/^    async def startMatch(self):$/;"	kind:member	line:81
+start_server	../main.py	/^start_server = websockets.serve(socket_worker, host='', port=server_port, ssl=ssl_context)$/;"	kind:variable	line:67
+to_json_state	../match.py	/^    def to_json_state(self):$/;"	kind:member	line:60
+touch_session	../session_manager.py	/^    def touch_session(self, session_id):$/;"	kind:member	line:15
+touch_user	../user_manager.py	/^    def touch_user(self, user_name):$/;"	kind:member	line:40
+unregister_user	../game_manager.py	/^async def unregister_user(id):$/;"	kind:function	line:26
+user.py	../user.py	1;"	kind:file	line:1
+user_manager.py	../user_manager.py	1;"	kind:file	line:1
+verify_user	../user_manager.py	/^    def verify_user(self, user_name, pw):$/;"	kind:member	line:20

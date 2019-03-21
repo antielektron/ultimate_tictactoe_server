@@ -29,7 +29,11 @@ class SessionManager(object):
         # check if already existent (but should not be the case)
         if len(DatabaseConnection.global_single_query(f"SELECT id FROM sessions WHERE id='{new_id}'")) > 0:
             # okay, next try:
-            return self.create_session_for_registered_user(self, user_name)
+            return self.create_session_for_registered_user(user_name)
+        
+        # delete other active sessions:
+        query = f"DELETE FROM sessions WHERE registered_user='{user_name}'"
+        DatabaseConnection.global_single_execution(query)
 
         query = f"INSERT INTO sessions (id, registered_user, temp_user, last_seen) VALUES ( '{new_id}', '{user_name}', NULL, '{datetime.datetime.now()}')"
         DatabaseConnection.global_single_execution(query)
@@ -40,7 +44,11 @@ class SessionManager(object):
         # check if already existent (but should not be the case)
         if len(DatabaseConnection.global_single_query(f"SELECT id FROM sessions WHERE id='{new_id}'")) > 0:
             # okay, next try:
-            return self.create_session_for_registered_user(self, user_name)
+            return self.create_session_for_registered_user(user_name)
+        
+        # delete other active sessions:
+        query = f"DELETE FROM sessions WHERE temp_user='{user_name}'"
+        DatabaseConnection.global_single_execution(query)
         
         query = f"INSERT INTO sessions (id, registered_user, temp_user, last_seen) VALUES ( '{new_id}', NULL, '{user_name}', '{datetime.datetime.now()}')"
         DatabaseConnection.global_single_execution(query)
