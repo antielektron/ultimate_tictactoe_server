@@ -114,7 +114,7 @@ class ConnectionHandler(object):
                              socket: websockets.WebSocketServerProtocol,
                              login_msg: str):
         msg = parse_message(login_msg)
-        print(msg)
+        print("new incomming connection...")
         if msg is None:
             return None
 
@@ -474,7 +474,7 @@ class ConnectionHandler(object):
     async def handle_message(self, conn, msg_str):
         msg = parse_message(msg_str)
 
-        print(msg)
+        print("incoming message" + msg)
 
         if msg is None:
             return None

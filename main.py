@@ -29,18 +29,16 @@ DatabaseConnection(db_host,
 async def socket_worker(websocket, path):
     connection = None
 
-    print("new incomin connection")
 
     try:
         raw_msg = await websocket.recv()
 
         connection = await ch.new_connection(websocket, raw_msg)
 
-        print(ch.open_connections_by_id)
-        print(ch.open_connections_by_user)
-
         if connection is None:
             return
+        
+        print("successfull logged in user: " + connection.user_name)
         
         async for m in websocket:
             await ch.handle_message(connection, m)
@@ -59,7 +57,6 @@ async def socket_worker(websocket, path):
         id = None
         if connection:
             id = connection.user_name
-            print(ch.open_connections_by_id)
             await ch.disconnect(connection)
             await connection.close()
 
