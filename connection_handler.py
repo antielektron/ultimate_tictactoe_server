@@ -145,7 +145,7 @@ class ConnectionHandler(object):
             return None
 
         elif msg['type'] == 'temp_session':
-            name = msg['data']['name']
+            name = msg['data']['name'].lower()
             if len(self.session_manager.get_session_by_temp_user(name)) == 0:
                 if len(self.user_manager.get_user(name)) == 0:
                     if len(msg['data']['name']) < 16 and ';' not in name and '\'' not in name and '\"' not in name:
@@ -188,7 +188,7 @@ class ConnectionHandler(object):
 
             try:
 
-                name = msg['data']['name']
+                name = msg['data']['name'].lower()
                 pw = msg['data']['pw']
 
                 if len(name) <= 16 and len(pw) <= 32 and len(name) > 0 and len(pw) > 0:
@@ -320,7 +320,7 @@ class ConnectionHandler(object):
             )
 
         else:
-            opponent = data['player']
+            opponent = data['player'].lower()
             if opponent == conn.user_name:
                 await conn.websocket.send(
                     json.dumps(

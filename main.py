@@ -64,11 +64,16 @@ async def socket_worker(websocket, path):
             id = "unknown_user"
         print("close connection to user: " + id)
 
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain(cert_file, keyfile=key_file)
+if cert_file is not None and key_file is not None:
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_context.load_cert_chain(cert_file, keyfile=key_file)
 
-start_server = websockets.serve(
-    socket_worker, host='', port=server_port, ssl=ssl_context)
+    start_server = websockets.serve(
+        socket_worker, host='', port=server_port, ssl=ssl_context)
+
+else:
+    start_server = websockets.serve(
+        socket_worker, host='', port=server_port)
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
