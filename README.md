@@ -287,3 +287,62 @@ client:
 
 
 
+**friend request**:
+
+```json
+{
+    "type": "friend_request",
+    "data" : {
+        "user": "<friend>"
+    }
+}
+```
+
+response:
+
+```json
+{  
+    "type": "friend_request_response",
+    "data": {
+        "success": <true|false>
+        "msg": "..."
+    }
+}
+```
+
+**unfriend**:
+
+```json
+{
+    "type": "unfriend_request",
+    "data" : {
+        "user": "<friend>"
+    }
+}
+```
+
+response:
+
+```json
+{  
+    "type": "unfriend_request_response",
+    "data": {
+        "success": <true|false>
+        "msg": "..."
+    }
+}
+```
+
+
+
+**friend update**:
+
+```json
+{
+    "type": "friends_update",
+    "data": {
+        "friends": "<list of friends>"
+    }
+}
+```
+

@@ -17,6 +17,13 @@ class UserManager(object):
         query = f"DELETE FROM users where name='{user_name}'"
         DatabaseConnection.global_single_execution(query)
 
+        # remove from friends:
+        query = f"DELETE FROM friends WHERE user='{user_name}'"
+        DatabaseConnection.global_single_execution(query)
+
+        query = f"DELETE FROM friends WHERE friend='{user_name}'"
+        DatabaseConnection.global_single_execution(query)
+
     def verify_user(self, user_name, pw):
         query = f"SELECT * FROM users where name='{user_name}'"
         users = DatabaseConnection.global_single_query(query)
@@ -41,6 +48,25 @@ class UserManager(object):
         matches = self.get_user(user_name)
         assert len(matches) == 1
         query = f"UPDATE users SET last_seen='{datetime.datetime.now()}' WHERE name='{user_name}'"
+        DatabaseConnection.global_single_execution(query)
+    
+    def add_friend_to_user(self, user_name, friend_name):
+        if len(self.get_user(friend_name)) > 0:
+            query = f"INSERT INTO friends (user, friend) VALUES ( '{user_name}', '{friend_name}')"
+            DatabaseConnection.global_single_execution(query)
+            return True
+        return False
+    
+    def get_friends_for_user(self, user_name):
+        query = f"SELECT friend FROM friends WHERE user='{user_name}'"
+        tmp = DatabaseConnection.global_single_query(query)
+        friends = set()
+        for entry in tmp:
+            friends.add(entry['friend'])
+        return friends
+    
+    def remove_friend_from_user(self, user_name, friend_name):
+        query = f"DELETE FROM friends WHERE user='{user_name}' AND friend='{friend_name}'"
         DatabaseConnection.global_single_execution(query)
 
     def get_all_users(self):

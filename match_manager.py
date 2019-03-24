@@ -54,6 +54,10 @@ class MatchManager(object):
         print("updated match")
         return match
     
+    def is_match(self, player_a, player_b):
+        query = f"SELECT * FROM matches WHERE (user_a='{player_a}' AND user_b='{player_b}') OR (user_a='{player_b}' AND user_b='{player_a}')"
+        return len(DatabaseConnection.global_single_query(query))
+    
     def delete_match(self, match_id):
         query = f"DELETE FROM matches WHERE id='{match_id}'"
         DatabaseConnection.global_single_execution(query)

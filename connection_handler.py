@@ -131,6 +131,7 @@ class ConnectionHandler(object):
                         "msg": ""
                     }
                 }))
+                await self.send_friends(conn)
                 await self._on_match_state_req(conn, None)
                 return conn
             await conn.send(json.dumps({
@@ -231,6 +232,7 @@ class ConnectionHandler(object):
             }))
 
             if success:
+                await self.send_friends(conn)
                 await self._on_match_state_req(conn, None)
 
             return conn
@@ -337,6 +339,35 @@ class ConnectionHandler(object):
             try:
                 if len(opponent) <= 16 and '\'' not in opponent and '"' not in opponent:
                     if len(self.user_manager.get_user(opponent)) > 0:
+
+                        if len(self.match_manager.get_matches_for_user(conn.user_name)) >= 5:
+                            await conn.websocket.send(
+                                json.dumps(
+                                    {
+                                        "type": "match_request_response",
+                                        "data": {
+                                            "success": False,
+                                            "msg": "player " + opponent + " has too many open matches"
+                                        }
+                                    }
+                                )
+                            )
+                            return
+                        
+                        if (self.match_manager.is_match(conn.user_name, opponent)):
+                            await conn.websocket.send(
+                                json.dumps(
+                                    {
+                                        "type": "match_request_response",
+                                        "data": {
+                                            "success": False,
+                                            "msg": "you are already plaing against " + opponent
+                                        }
+                                    }
+                                )
+                            )
+                            return
+
                         await self._start_match(conn.user_name, opponent)
 
                         await conn.websocket.send(
@@ -461,12 +492,87 @@ class ConnectionHandler(object):
             if match is not None:
                 match_state = match.to_json_state()
 
-            conn.send(json.dumps({
+            await conn.send(json.dumps({
                 'type': 'match_update',
                 'data': {
                     'match_state': json.loads(match_state)
                 }
             }))
+
+    async def _on_friend_request(self, conn, data):
+        msg = "error in handling friend request"
+        success = False
+        try:
+            friend = data['user'].lower()
+
+            # check for user:
+            if "\"" not in friend and "'" not in friend and ";" not in friend:
+                if friend in self.user_manager.get_friends_for_user(conn.user_name):
+                    success = False
+                    msg = f"'{friend}' is already your friend"
+
+                elif self.user_manager.add_friend_to_user(conn.user_name, friend):
+                    success = True
+                    msg = f"added '{friend}' as a friend"
+
+                else:
+                    success = False
+                    msg = f"player '{friend}' not found"
+
+            else:
+                success = False
+                msg = "misformated friend request"
+
+        finally:
+            await conn.send(json.dumps({
+                'type': 'friend_request_response',
+                'data': {
+                    'success': success,
+                    'msg': msg
+                }
+            }))
+
+            if success:
+                await self.send_friends(conn)
+
+    async def _on_unfriend_request(self, conn, data):
+        success = False
+        msg = "error in handling unfriend request"
+        try:
+            friend = data['user'].lower()
+
+            if "\"" not in friend and "'" not in friend and ";" not in friend:
+                if friend not in self.user_manager.get_friends_for_user(conn.user_name):
+                    success = False
+                    msg = f"cannot end friendship with '{friend}': it's not one of your friends"
+                else:
+                    self.user_manager.remove_friend_from_user(
+                        conn.user_name, friend)
+
+                    success = True
+                    msg = f"removed '{friend}' from your friend list"
+
+        finally:
+            await conn.send(json.dumps({
+                'type': 'unfriend_request_response',
+                'data': {
+                    'success': success,
+                    'msg': msg
+                }
+            }))
+
+            if success:
+                await self.send_friends(conn)
+
+    async def send_friends(self, conn):
+        friends = list(self.user_manager.get_friends_for_user(conn.user_name))
+
+        await conn.send(json.dumps({
+            'type': 'friends_update',
+            'data': {
+                'friends': friends
+            }
+        }))
 
     async def disconnect(self, conn):
         self._del_connection(conn)
@@ -493,6 +599,12 @@ class ConnectionHandler(object):
 
         elif t == "match_states_request":
             await self._on_match_state_req(conn, msg['data'])
+
+        elif t == "friend_request":
+            await self._on_friend_request(conn, msg['data'])
+
+        elif t == "unfriend_request":
+            await self._on_unfriend_request(conn, msg['data'])
 
         else:
             print("could not interpret message: " + msg_str)
