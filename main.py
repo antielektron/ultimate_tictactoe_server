@@ -3,68 +3,77 @@ import websockets
 from settings import *
 import ssl
 
-from game_manager import *
+import traceback
+
+from session_manager import SessionManager
+from connection_handler import Connection, ConnectionHandler
+from match_manager import MatchManager
+from user_manager import UserManager
+from database_connection import DatabaseConnection
+import datetime
+
+um = UserManager()
+sm = SessionManager(datetime.timedelta(hours=12))
+mm = MatchManager()
+ch = ConnectionHandler(sm, um, mm)
+
+
+DatabaseConnection(db_host,
+                   db_port,
+                   db_user,
+                   db_pw,
+                   db_db,
+                   db_charset)
 
 
 async def socket_worker(websocket, path):
+    connection = None
 
-    registered = False
-    id = None
-
-    print("new connection")
 
     try:
-        # get first message as register message
         raw_msg = await websocket.recv()
 
-        msg = json.loads(raw_msg)
+        connection = await ch.new_connection(websocket, raw_msg)
 
-        if msg['type'] != 'register':
-            print("got wrong registration")
-            websocket.close()
+        if connection is None:
             return
-
-        id = msg['data']['id']
-
-        registered = await register_user(id, websocket)
-
-        register_response = {
-            'type': 'register_response', 'data': {
-                'success': True, 'msg': '...'}}
-
-        if not registered:
-            register_response['data']['success'] = False
-
-            await websocket.send(json.dumps(register_response))
-            websocket.close()
-            return
-
-        await websocket.send(json.dumps(register_response))
-
-        print("successful redisterd user " + id)
-
+        
+        print("successfull logged in user: " + connection.user_name)
+        
         async for m in websocket:
-            await process_message(id, m)
+            await ch.handle_message(connection, m)
 
     except Exception as e:
         # TODO: each disconnect is an exception so far
-        if id is not None:
-            print("catched exception in worker for user: " + id + ": " + str(e))
+        if connection is not None:
+            print("catched exception in worker for user: " +
+                  connection.user_name + ": " + str(e))
         else:
-            print("catched exception in worker for unknown user")
+            print("catched exception in worker for unknown user: " + str(e))
+        
+        print(traceback.print_exc())
 
     finally:
-        if registered:
-            await unregister_user(id)
+        id = None
+        if connection:
+            id = connection.user_name
+            await ch.disconnect(connection)
+            await connection.close()
 
-        if id is None:
+        if connection is None:
             id = "unknown_user"
         print("close connection to user: " + id)
 
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain(cert_file , keyfile=key_file)
+if cert_file is not None and key_file is not None:
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_context.load_cert_chain(cert_file, keyfile=key_file)
 
-start_server = websockets.serve(socket_worker, host='', port=5555, ssl=ssl_context)
+    start_server = websockets.serve(
+        socket_worker, host='', port=server_port, ssl=ssl_context)
+
+else:
+    start_server = websockets.serve(
+        socket_worker, host='', port=server_port)
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
