@@ -12,6 +12,8 @@ from user_manager import UserManager
 from database_connection import DatabaseConnection
 import datetime
 
+from tools import debug
+
 um = UserManager()
 sm = SessionManager(datetime.timedelta(hours=12))
 mm = MatchManager()
@@ -29,7 +31,6 @@ DatabaseConnection(db_host,
 async def socket_worker(websocket, path):
     connection = None
 
-
     try:
         raw_msg = await websocket.recv()
 
@@ -37,21 +38,25 @@ async def socket_worker(websocket, path):
 
         if connection is None:
             return
-        
-        print("successfull logged in user: " + connection.user_name)
-        
+
+        debug("successfull logged in user: " + connection.user_name)
+
         async for m in websocket:
             await ch.handle_message(connection, m)
+
+    except websockets.ConnectionClosed as e:
+        # nothing suspicious here
+        pass
 
     except Exception as e:
         # TODO: each disconnect is an exception so far
         if connection is not None:
-            print("catched exception in worker for user: " +
+            debug("catched exception in worker for user: " +
                   connection.user_name + ": " + str(e))
         else:
-            print("catched exception in worker for unknown user: " + str(e))
-        
-        print(traceback.print_exc())
+            debug("catched exception in worker for unknown user: " + str(e))
+
+        debug(traceback.debug_exc())
 
     finally:
         id = None
@@ -62,7 +67,7 @@ async def socket_worker(websocket, path):
 
         if connection is None:
             id = "unknown_user"
-        print("close connection to user: " + id)
+        debug("close connection to user: " + id)
 
 if cert_file is not None and key_file is not None:
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)

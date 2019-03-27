@@ -6,12 +6,14 @@ from user_manager import UserManager
 from match_manager import MatchManager
 from match import Match
 
+from tools import debug
+
 
 def parse_message(msg: str):
     # TODO: make it more robust by validating each part of a message
     msg_obj = json.loads(msg)
     if "type" not in msg_obj or "data" not in msg_obj:
-        print("got strange message")
+        debug("got strange message")
         return None
 
     return msg_obj
@@ -33,7 +35,7 @@ class Connection(object):
         try:
             await self.websocket.send(msg)
         except Exception as e:
-            print("error sending message to user " +
+            debug("error sending message to user " +
                   self.user_name + ". Reason: " + str(e))
 
     async def close(self):
@@ -44,7 +46,7 @@ class Connection(object):
             self.is_closed = True
 
         except Exception as e:
-            print("error closing session to user " +
+            debug("error closing session to user " +
                   self.user_name + ". Reason: " + str(e))
 
 
@@ -114,7 +116,7 @@ class ConnectionHandler(object):
                              socket: websockets.WebSocketServerProtocol,
                              login_msg: str):
         msg = parse_message(login_msg)
-        print("new incomming connection...")
+        debug("new incomming connection...")
         if msg is None:
             return None
 
@@ -395,7 +397,7 @@ class ConnectionHandler(object):
                         )
 
             except Exception as e:
-                print("error processing match request: " + str(data) + str(e))
+                debug("error processing match request: " + str(data) + str(e))
 
     async def _on_match_state_req(self, conn, data):
         db_matches = self.match_manager.get_matches_for_user(conn.user_name)
@@ -432,7 +434,7 @@ class ConnectionHandler(object):
             if match is not None:
                 match_state = match.to_json_state()
 
-                print(match_state)
+                debug(match_state)
 
                 await conn.send(json.dumps({
                     'type': 'match_update',
@@ -580,7 +582,7 @@ class ConnectionHandler(object):
     async def handle_message(self, conn, msg_str):
         msg = parse_message(msg_str)
 
-        print("incoming message" + str(msg))
+        debug("incoming message" + str(msg))
 
         if msg is None:
             return None
@@ -607,4 +609,4 @@ class ConnectionHandler(object):
             await self._on_unfriend_request(conn, msg['data'])
 
         else:
-            print("could not interpret message: " + msg_str)
+            debug("could not interpret message: " + msg_str)

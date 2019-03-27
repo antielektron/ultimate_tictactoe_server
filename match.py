@@ -3,6 +3,8 @@ import numpy as np
 import json
 import base64
 
+from tools import debug
+
 # decoder/encoder took from: https://stackoverflow.com/a/19271311
 
 
@@ -158,7 +160,7 @@ class Match(object):
         player_mark = FIELD_USER_A if self.is_player_a else FIELD_USER_B
 
         if not self.is_move_valid(sub_x, sub_y, x, y):
-            print("invalid move")
+            debug("invalid move")
             return False
 
         # else: move!
@@ -169,7 +171,7 @@ class Match(object):
 
         # check whether this indicates changes in the global field:
         if self.global_field[sub_y, sub_x] != FIELD_EMPTY:
-            print("field not empty")
+            debug("field not empty")
             return False
 
         subgrid = self.complete_field[sub_y * self.n: (

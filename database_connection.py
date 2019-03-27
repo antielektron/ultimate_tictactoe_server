@@ -36,23 +36,30 @@ class DatabaseConnection(object):
         DatabaseConnection.instance.commit()
 
     @staticmethod
-    def global_single_query(query):
+    def global_single_query(query, params=None):
         if ';' in query:
             # Possible injection!
             raise SQLInjectionError()
 
         with DatabaseConnection.global_cursor() as c:
-            c.execute(query)
+            if params is None:
+                c.execute(query)
+            else:
+                c.execute(query, params)
+
             return c.fetchall()
 
     @staticmethod
-    def global_single_execution(sql_statement):
+    def global_single_execution(sql_statement, params=None):
         if ';' in sql_statement:
             # Possible injection detected!
             raise SQLInjectionError()
 
         with DatabaseConnection.global_cursor() as c:
-            c.execute(sql_statement)
+            if params is None:
+                c.execute(sql_statement)
+            else:
+                c.execute(sql_statement, params)
             DatabaseConnection.global_commit()
 
     def __init__(self,
@@ -84,7 +91,7 @@ class DatabaseConnection(object):
                              ":" +
                              str(port) +
                              "\nCheck the configuration in settings.py!\n")
-            raise Exception('could not connec to database')
+            raise Exception('could not connect to database')
 
     def get_cursor(self):
         return self.connection.cursor()
@@ -95,6 +102,7 @@ class DatabaseConnection(object):
 
     def commit(self):
         self.connection.commit()
+
 
 def test_connection():
     import settings
