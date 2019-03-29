@@ -15,14 +15,25 @@ class UserManager(object):
         return DatabaseConnection.global_single_query(query, (user_name))
 
     def delete_user(self, user_name):
-        query = "DELETE FROM users where name=%s"
-        DatabaseConnection.global_single_execution(query, (user_name))
 
         # remove from friends:
         query = "DELETE FROM friends WHERE user=%s"
         DatabaseConnection.global_single_execution(query, (user_name))
 
         query = "DELETE FROM friends WHERE friend=%s"
+        DatabaseConnection.global_single_execution(query, (user_name))
+
+        # remove from sessions:
+        query = "DELETE FROM sessions WHERE registered_user=%s"
+        DatabaseConnection.global_single_execution(query, (user_name))
+
+        # remove from matches:
+        query = "DELETE FROM matches WHERE user_a=%s OR user_b=%s"
+        DatabaseConnection.global_single_execution(query, (user_name, user_name))
+
+        # finally remove user
+
+        query = "DELETE FROM users where name=%s"
         DatabaseConnection.global_single_execution(query, (user_name))
 
     def verify_user(self, user_name, pw):
