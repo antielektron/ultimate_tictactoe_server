@@ -16,7 +16,7 @@ from tools import debug
 
 um = UserManager()
 sm = SessionManager(datetime.timedelta(hours=12))
-mm = MatchManager()
+mm = MatchManager(user_manager=um)
 ch = ConnectionHandler(sm, um, mm)
 
 

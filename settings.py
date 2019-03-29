@@ -12,5 +12,8 @@ db_db = None
 
 db_charset = 'utf8mb4'
 
-# field dimension
+elo_start_value = 1000
+elo_default_k = 20
+
+# field dimension (warning: this constant is not constantly used)
 n = 3

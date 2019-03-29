@@ -6,7 +6,7 @@ from user_manager import UserManager
 from match_manager import MatchManager
 from match import Match
 
-from tools import debug
+from tools import debug, elo_p_win, elo_update
 
 
 def parse_message(msg: str):
@@ -133,6 +133,7 @@ class ConnectionHandler(object):
                         "msg": ""
                     }
                 }))
+                await self.send_elo(conn)
                 await self.send_friends(conn)
                 await self._on_match_state_req(conn, None)
                 return conn
@@ -234,6 +235,7 @@ class ConnectionHandler(object):
             }))
 
             if success:
+                await self.send_elo(conn)
                 await self.send_friends(conn)
                 await self._on_match_state_req(conn, None)
 
@@ -355,7 +357,7 @@ class ConnectionHandler(object):
                                 )
                             )
                             return
-                        
+
                         if (self.match_manager.is_match(conn.user_name, opponent)):
                             await conn.websocket.send(
                                 json.dumps(
@@ -444,6 +446,11 @@ class ConnectionHandler(object):
                     }
                 }))
 
+                if match.game_over:
+                    if match.is_draw or (match.player_won is not None):
+                        # send rank update
+                        await self.send_elo(conn)
+
                 other_user = match.player_a_name if conn.user_name == match.player_b_name else match.player_b_name
 
                 if other_user in self.open_connections_by_user:
@@ -457,6 +464,9 @@ class ConnectionHandler(object):
                     }))
                     if match.game_over:
                         self.match_manager.delete_match(match.id)
+                        if match.is_draw or (match.player_won is not None):
+                            # send rank update
+                            await self.send_elo(other_conn)
 
     async def _on_match_close(self, conn, data):
         match = None
@@ -467,6 +477,36 @@ class ConnectionHandler(object):
 
                 if (match is None):
                     return
+
+                if not match.game_over:
+                    # check whether both player made a move. If so, the match is ranked as lost for the player who aborted the match
+                    if match.complete_field.__contains__(Match.FIELD_USER_A) and match.complete_field.__contains__(Match.FIELD_USER_B):
+
+                        # update rankings:
+                        player_lost = conn.user_name
+                        player_won = match.player_a_name if player_lost == match.player_b_name else match.player_b_name
+
+                        elo_won = self.user_manager.get_elo(player_won)
+                        elo_lost = self.user_manager.get_elo(player_lost)
+
+                        # calculate elo values:
+                        p_won = elo_p_win(elo_won, elo_lost)
+                        p_lost = 1 - p_won
+
+                        new_elo_won = elo_update(elo_won, 1, p_won)
+                        new_elo_lost = elo_update(elo_lost, 0, p_lost)
+
+                        self.user_manager.update_elo(player_won, new_elo_won)
+                        self.user_manager.update_elo(player_lost, new_elo_lost)
+
+                        await self.send_elo(conn)
+
+                        if player_won in self.open_connections_by_user:
+                            other_conn = self.open_connections_by_user[player_won]
+                            await self.send_elo(other_conn)
+                        
+                        debug(
+                            f"Match {match.id} is aborted by {player_lost} (against {player_won}). Update elo-rankings: {elo_won}->{new_elo_won} and {elo_lost}->{new_elo_lost}")
 
                 match.game_over = True
 
@@ -567,12 +607,23 @@ class ConnectionHandler(object):
                 await self.send_friends(conn)
 
     async def send_friends(self, conn):
-        friends = list(self.user_manager.get_friends_for_user(conn.user_name))
+
+        friends, elos = self.user_manager.get_friends_and_elos_for_user(
+            conn.user_name)
 
         await conn.send(json.dumps({
             'type': 'friends_update',
             'data': {
-                'friends': friends
+                'friends': friends,
+                'elos': elos
+            }
+        }))
+
+    async def send_elo(self, conn):
+        await conn.send(json.dumps({
+            'type': 'elo_update',
+            'data': {
+                'elo': self.user_manager.get_elo(conn.user_name)
             }
         }))
 

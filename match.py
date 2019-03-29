@@ -29,19 +29,20 @@ def SimpleDecode(jsonDump):
     return np.array(json.loads(jsonDump))
 
 
-FIELD_EMPTY = 0
-FIELD_USER_A = 1
-FIELD_USER_B = 2
-FIELD_DRAW = 3
-
-
 class Match(object):
+
+    FIELD_EMPTY = 0
+    FIELD_USER_A = 1
+    FIELD_USER_B = 2
+    FIELD_DRAW = 3
+
     def __init__(self, n, match_id, player_a_name, player_b_name, json_state=None):
         self.n = n
         self.id = match_id
         self.complete_field = np.zeros(shape=(n*n, n*n), dtype=int)
         self.global_field = np.zeros(shape=(n, n), dtype=int)
         self.player_won = None
+        self.is_draw = False
         self.game_over = False
         self.last_move = None
         self.is_player_a = True
@@ -59,9 +60,15 @@ class Match(object):
         self.game_over = match_obj['game_over']
         self.last_move = match_obj['last_move']
         self.is_player_a = match_obj['active_player'] == self.player_a_name
-    
+
+        # draw state w.r.t backward compability
+        self.is_draw = match_obj['is_draw'] if 'is_draw' in match_obj else False
+
     def to_json_state(self):
-        match_obj = {
+        return json.dumps(self.to_dict_state())
+    
+    def to_dict_state(self):
+        return {
             'complete_field': self.complete_field.tolist(),
             'global_field': self.global_field.tolist(),
             'last_move': self.last_move,
@@ -69,11 +76,10 @@ class Match(object):
             'player_won': self.player_won,
             'active_player': self.player_a_name if self.is_player_a else self.player_b_name,
             'player_a': self.player_a_name,
-            'player_b': self.player_b_name
+            'player_b': self.player_b_name,
+            'is_draw': self.is_draw
         }
 
-        return json.dumps(match_obj)
-    
     def switch_player_names(self):
         tmp = self.player_a_name
         self.player_a_name = self.player_b_name
@@ -99,20 +105,20 @@ class Match(object):
             last_sub_x = self.last_move['sub_x']
             last_sub_y = self.last_move['sub_y']
 
-            if sub_x != last_x and self.global_field[last_y, last_x] == FIELD_EMPTY:
+            if sub_x != last_x and self.global_field[last_y, last_x] == Match.FIELD_EMPTY:
                 # user is not allowed to place everywhere! wrong move!
                 return False
 
-            if sub_y != last_y and self.global_field[last_y, last_x] == FIELD_EMPTY:
+            if sub_y != last_y and self.global_field[last_y, last_x] == Match.FIELD_EMPTY:
                 return False
 
-        if self.complete_field[sub_y * self.n + y][sub_x * self.n + x] != FIELD_EMPTY:
+        if self.complete_field[sub_y * self.n + y][sub_x * self.n + x] != Match.FIELD_EMPTY:
             return False
-        
+
         return True
 
     def is_full(self, field):
-        return not field.__contains__(FIELD_EMPTY)
+        return not field.__contains__(Match.FIELD_EMPTY)
 
     def check_win(self, field, x, y):
         is_col = True
@@ -157,7 +163,7 @@ class Match(object):
         abs_x = sub_x * self.n + x
         abs_y = sub_y * self.n + y
 
-        player_mark = FIELD_USER_A if self.is_player_a else FIELD_USER_B
+        player_mark = Match.FIELD_USER_A if self.is_player_a else Match.FIELD_USER_B
 
         if not self.is_move_valid(sub_x, sub_y, x, y):
             debug("invalid move")
@@ -170,7 +176,7 @@ class Match(object):
         self.last_move = {'sub_x': sub_x, 'sub_y': sub_y, 'x': x, 'y': y}
 
         # check whether this indicates changes in the global field:
-        if self.global_field[sub_y, sub_x] != FIELD_EMPTY:
+        if self.global_field[sub_y, sub_x] != Match.FIELD_EMPTY:
             debug("field not empty")
             return False
 
@@ -184,10 +190,11 @@ class Match(object):
                 self.player_won = self.player_a_name if self.is_player_a else self.player_b_name
 
         elif self.is_full(subgrid):
-            self.global_field[sub_y, sub_x] = FIELD_DRAW
+            self.global_field[sub_y, sub_x] = Match.FIELD_DRAW
             if self.is_full(self.global_field):
                 self.game_over = True
                 self.player_won = None
+                self.is_draw = True
 
         self.is_player_a = not self.is_player_a
 
