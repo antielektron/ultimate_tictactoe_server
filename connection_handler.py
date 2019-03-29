@@ -147,8 +147,8 @@ class ConnectionHandler(object):
                 "type": "reconnect_response",
                 "data": {
                     "success": False,
-                    "id": conn.id,
-                    "user": conn.user_name,
+                    "id": None,
+                    "user": None,
                     "msg": "session not available"
                 }
             }))
