@@ -8,6 +8,8 @@ from match import Match
 
 from tools import debug, elo_p_win, elo_update
 
+import re
+
 
 def parse_message(msg: str):
     # TODO: make it more robust by validating each part of a message
@@ -17,6 +19,10 @@ def parse_message(msg: str):
         return None
 
     return msg_obj
+
+
+def valid_name(name: str) -> bool:
+    return re.match('^[a-z0-9_-]{3,16}$', name) is not None
 
 
 class Connection(object):
@@ -150,7 +156,7 @@ class ConnectionHandler(object):
 
         elif msg['type'] == 'temp_session':
             name = msg['data']['name'].lower()
-            if len(self.session_manager.get_session_by_temp_user(name)) == 0:
+            if valid_name(name) and len(self.session_manager.get_session_by_temp_user(name)) == 0:
                 if len(self.user_manager.get_user(name)) == 0:
                     if len(msg['data']['name']) < 16 and ';' not in name and '\'' not in name and '\"' not in name:
                         id = self.session_manager.create_session_for_temp_user(
@@ -195,7 +201,7 @@ class ConnectionHandler(object):
                 name = msg['data']['name'].lower()
                 pw = msg['data']['pw']
 
-                if len(name) <= 16 and len(pw) <= 32 and len(name) > 0 and len(pw) > 0:
+                if valid_name(name) and len(name) <= 16 and len(pw) <= 32 and len(name) > 0 and len(pw) > 0:
 
                     users = self.user_manager.get_user(name)
                     if len(users) == 0:
@@ -215,10 +221,10 @@ class ConnectionHandler(object):
                     else:
                         response_msg = "invalid password for user " + name
                 else:
-                    response_msg = "invalid username or pw"
+                    response_msg = "invalid username or pw. Only usernames containing alphanumerical symbols (including '_','-') between 3 and 16 characters are allowed!"
 
             except Exception as e:
-                response_msg = "invalid username or pw"
+                response_msg = "invalid username or pw. Only usernames containing alphanumerical symbols (including '_','-') between 3 and 16 characters are allowed!"
 
             if success:
                 conn = Connection(id=session_id, user_name=name,
@@ -341,7 +347,7 @@ class ConnectionHandler(object):
                 )
                 return
             try:
-                if len(opponent) <= 16 and '\'' not in opponent and '"' not in opponent:
+                if valid_name(opponent):
                     if len(self.user_manager.get_user(opponent)) > 0:
 
                         if len(self.match_manager.get_matches_for_user(conn.user_name)) >= 5:
@@ -397,6 +403,18 @@ class ConnectionHandler(object):
                                 }
                             )
                         )
+                else:
+                    await conn.websocket.send(
+                        json.dumps(
+                            {
+                                "type": "match_request_response",
+                                "data": {
+                                    "success": False,
+                                    "msg": "user " + opponent + " not found :("
+                                }
+                            }
+                        )
+                    )
 
             except Exception as e:
                 debug("error processing match request: " + str(data) + str(e))
@@ -504,7 +522,7 @@ class ConnectionHandler(object):
                         if player_won in self.open_connections_by_user:
                             other_conn = self.open_connections_by_user[player_won]
                             await self.send_elo(other_conn)
-                        
+
                         debug(
                             f"Match {match.id} is aborted by {player_lost} (against {player_won}). Update elo-rankings: {elo_won}->{new_elo_won} and {elo_lost}->{new_elo_lost}")
 
@@ -548,7 +566,7 @@ class ConnectionHandler(object):
             friend = data['user'].lower()
 
             # check for user:
-            if "\"" not in friend and "'" not in friend and ";" not in friend:
+            if valid_name(friend):
                 if friend in self.user_manager.get_friends_for_user(conn.user_name):
                     success = False
                     msg = f"'{friend}' is already your friend"
@@ -583,7 +601,7 @@ class ConnectionHandler(object):
         try:
             friend = data['user'].lower()
 
-            if "\"" not in friend and "'" not in friend and ";" not in friend:
+            if valid_name(friend):
                 if friend not in self.user_manager.get_friends_for_user(conn.user_name):
                     success = False
                     msg = f"cannot end friendship with '{friend}': it's not one of your friends"
@@ -621,7 +639,7 @@ class ConnectionHandler(object):
 
     async def send_elo(self, conn):
 
-        top_names, top_elos = self.user_manager.get_highscores(100,0)
+        top_names, top_elos = self.user_manager.get_highscores(100, 0)
 
         await conn.send(json.dumps({
             'type': 'elo_update',
