@@ -137,7 +137,7 @@ class ConnectionHandler(object):
                 await self.send_friends(conn)
                 await self._on_match_state_req(conn, None)
                 return conn
-            await conn.send(json.dumps({
+            await socket.send(json.dumps({
                 "type": "reconnect_response",
                 "data": {
                     "success": False,
