@@ -620,10 +620,16 @@ class ConnectionHandler(object):
         }))
 
     async def send_elo(self, conn):
+
+        top_names, top_elos = self.user_manager.get_highscores(100,0)
+
         await conn.send(json.dumps({
             'type': 'elo_update',
             'data': {
-                'elo': self.user_manager.get_elo(conn.user_name)
+                'elo': self.user_manager.get_elo(conn.user_name),
+                'rank': self.user_manager.get_rank_for_user(conn.user_name),
+                'top_names': top_names,
+                'top_elos': top_elos
             }
         }))
 

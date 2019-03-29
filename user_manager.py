@@ -72,6 +72,22 @@ class UserManager(object):
             return float(q[0]['average'])
 
         return None
+    
+    def get_highscores(self, n, list_offset):
+        query = "SELECT name, elo FROM users ORDER BY elo DESC LIMIT %s OFFSET %s"
+        q = DatabaseConnection.global_single_query(query, (n, list_offset))
+        names = []
+        elos = []
+        for entry in q:
+            names.append(entry['name'])
+            elos.append(int(entry['elo']))
+        
+        return names, elos
+    
+    def get_rank_for_user(self, user_name):
+        query = "SELECT Count(*)+1 as rank  from users where elo >(SELECT elo from users WHERE name=%s)"
+        q = DatabaseConnection.global_single_query(query, (user_name))
+        return int(q[0]['rank'])
 
     def add_friend_to_user(self, user_name, friend_name):
         if len(self.get_user(friend_name)) > 0:

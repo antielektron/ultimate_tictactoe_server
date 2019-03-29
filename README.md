@@ -270,7 +270,10 @@ response:
 {
     "type": "elo_update",
     "data": {
-        "elo": <elo_value>
+        "elo": <elo_value>,
+        "rank": <rank>,
+        "top_names": <list of top 100 names>,
+        "top_elos": <list of top 100 elos>
     }
 }
 ```
