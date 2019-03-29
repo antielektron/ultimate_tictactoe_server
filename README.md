@@ -6,92 +6,6 @@ communication with the web client is done by a (far from any standard and almost
 
 
 
-**register as player:**
-
-```json
-{
-    "type": "register",
-    "data": {
-        "id": "<player_id>",
-   		"name": "<player_name>"
-    }
-}
-```
-
-response:
-
-```JSON
-{
-    "type": "register_response",
-    "data": {
-        "success": true,
-        "msg": "<additional info e.g. in case of error>"
-    }
-}
-```
-
-
-
-**message from server that game started**
-
-```json
-{
-    "type": "game_starts",
-    "data": {
-        "msg": "...",
-        "opponent_name": "...",
-        "is_first_move": true
-    }
-}
-```
-
-note: `is_first_move` indicates whether the player or it's opponent begins
-
-
-
-**move**
-
-```json
-{
-    "type": "move",
-    "data": {
-        "sub_x": "...",
-        "sub_y": "...",
-        "x": "...",
-        "y": "..."
-    }
-}
-```
-
-response:
-
-```json
-{
-    "type": "move_response",
-    "data": {
-        "success": true,
-        "msg": "..."
-    }
-}
-```
-
-
-
-**end game**
-
-```json
-{
-    "type": "end_game",
-    "data": {
-        "msg": "..."
-    }
-}
-```
-
-(response?)
-
-
-
 ## new version:
 
 **json match state:**
@@ -107,9 +21,10 @@ response:
         "y": "..."
     }
     game_over: <true | false>,
-    player_won: <null | <player_name>>
-    current_player: <null | <player_name>>
-    player_a: "..."
+    is_draw: <true | false>,
+    player_won: <null | <player_name>>,
+    current_player: <null | <player_name>>,
+    player_a: "...",
     player_b: "..."
 }
 ```
@@ -341,7 +256,21 @@ response:
 {
     "type": "friends_update",
     "data": {
-        "friends": "<list of friends>"
+        "friends": "<list of friends>",
+        "elos": "<list of elo values>"
+    }
+}
+```
+
+
+
+**elo rank update**:
+
+```json
+{
+    "type": "elo_update",
+    "data": {
+        "elo": <elo_value>
     }
 }
 ```

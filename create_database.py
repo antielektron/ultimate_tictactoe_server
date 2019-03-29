@@ -19,7 +19,7 @@ def create_tables():
         "DROP TABLE IF EXISTS sessions",
         "DROP TABLE IF EXISTS users",
         "DROP TABLE IF EXISTS friends",
-        "CREATE TABLE users (name varchar(16) NOT NULL, pw_hash varchar(128) NOT NULL, pw_salt varchar(32) NOT NULL, last_seen datetime NOT NULL, PRIMARY KEY (name)) CHARACTER SET " + settings.db_charset,
+        "CREATE TABLE users (name varchar(16) NOT NULL, pw_hash varchar(128) NOT NULL, pw_salt varchar(32) NOT NULL, last_seen datetime NOT NULL, elo int NOT NULL, PRIMARY KEY (name)) CHARACTER SET " + settings.db_charset,
         "CREATE TABLE matches (id varchar(32) NOT NULL, user_a varchar(16) NOT NULL, user_b varchar(16) NOT NULL, match_state varchar(4096) NOT NULL, active_user varchar(16), last_active datetime NOT NULL, FOREIGN KEY (user_a) REFERENCES users(name), FOREIGN KEY (user_b) REFERENCES users(name), FOREIGN KEY (active_user) REFERENCES users(name)) CHARACTER SET " + settings.db_charset,
         "CREATE TABLE sessions (id varchar(32) NOT NULL, registered_user varchar(16), temp_user varchar(16), last_seen datetime NOT NULL, PRIMARY KEY (id), FOREIGN KEY(registered_user) REFERENCES users(name)) CHARACTER SET " + settings.db_charset,
         "CREATE TABLE friends (user varchar(16) NOT NULL, friend varchar(16) NOT NULL, FOREIGN KEY(user) REFERENCES users(name), FOREIGN KEY(friend) REFERENCES users(name)) CHARACTER SET " + settings.db_charset
