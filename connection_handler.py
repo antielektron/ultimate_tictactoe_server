@@ -350,7 +350,7 @@ class ConnectionHandler(object):
                 if valid_name(opponent):
                     if len(self.user_manager.get_user(opponent)) > 0:
 
-                        if len(self.match_manager.get_matches_for_user(conn.user_name)) >= 5:
+                        if len(self.match_manager.get_matches_for_user(opponent)) >= 5:
                             await conn.websocket.send(
                                 json.dumps(
                                     {
