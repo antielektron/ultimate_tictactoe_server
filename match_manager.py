@@ -131,12 +131,15 @@ class MatchManager(object):
                           player_b_name=entry['user_b'], json_state=entry['match_state'])
 
             if (not match.game_over):
+
                 match.game_over = True
 
-                # check who is the current player who did not make the move in time:
-                match.player_won = match.player_b_name if match.is_player_a else match.player_a_name
+                if match.complete_field.__contains__(Match.FIELD_USER_A) and match.complete_field.__contains__(Match.FIELD_USER_B):
 
-                self.update_match(entry['id'], match, False)
+                    # check who is the current player who did not make the move in time:
+                    match.player_won = match.player_b_name if match.is_player_a else match.player_a_name
+
+                    self.update_match(entry['id'], match, False)
 
         # delete matches from db:
 
