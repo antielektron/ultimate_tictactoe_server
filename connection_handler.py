@@ -8,6 +8,8 @@ from match import Match
 
 from tools import debug, elo_p_win, elo_update
 
+import datetime
+
 import re
 
 
@@ -60,10 +62,13 @@ class ConnectionHandler(object):
     def __init__(self,
                  session_manager: SessionManager,
                  user_manager: UserManager,
-                 match_manager: MatchManager):
+                 match_manager: MatchManager,
+                 revoke_check_timedelta):
         self.session_manager = session_manager
         self.user_manager = user_manager
         self.match_manager = match_manager
+        self.revoke_check_timedelta = revoke_check_timedelta
+        self.lastCheck = datetime.datetime.now()
 
         self.open_connections_by_user = {}
         self.open_connections_by_id = {}
@@ -259,6 +264,7 @@ class ConnectionHandler(object):
                         "type": "match_update",
                         "data": {
                             "id": m.id,
+                            "revoke_time": m.revoke_time,
                             "match_state": state
                         }
                     }
@@ -271,6 +277,7 @@ class ConnectionHandler(object):
                         "type": "match_update",
                         "data": {
                             "id": m.id,
+                            "revoke_time": m.revoke_time,
                             "match_state": state
                         }
                     }
@@ -427,6 +434,7 @@ class ConnectionHandler(object):
                 "type": "match_update",
                 "data": {
                     "id": db_match['id'],
+                    "revoke_time": match.get_sql_revoke_time(),
                     "match_state": json.loads(match.to_json_state())
                 }
             }))
@@ -460,6 +468,7 @@ class ConnectionHandler(object):
                     'type': 'match_update',
                     'data': {
                         'id': match.id,
+                        'revoke_time': match.get_sql_revoke_time(),
                         'match_state': json.loads(match_state)
                     }
                 }))
@@ -477,6 +486,7 @@ class ConnectionHandler(object):
                         'type': 'match_update',
                         'data': {
                             'id': match.id,
+                            'revoke_time': match.get_sql_revoke_time(),
                             'match_state': json.loads(match_state)
                         }
                     }))
@@ -536,6 +546,7 @@ class ConnectionHandler(object):
                     'type': 'match_update',
                     'data': {
                         'id': match_id,
+                        'revoke_time': match.get_sql_revoke_time(),
                         'match_state': json.loads(match_state)
                     }
                 })
@@ -551,13 +562,17 @@ class ConnectionHandler(object):
             match_state = None
             if match is not None:
                 match_state = match.to_json_state()
+            
+            if match_state is not None:
 
-            await conn.send(json.dumps({
-                'type': 'match_update',
-                'data': {
-                    'match_state': json.loads(match_state)
-                }
-            }))
+                await conn.send(json.dumps({
+                    'type': 'match_update',
+                    'data': {
+                        'id': match.id,
+                        'revoke_time': match.get_sql_revoke_time(),
+                        'match_state': json.loads(match_state)
+                    }
+                }))
 
     async def _on_friend_request(self, conn, data):
         msg = "error in handling friend request"
@@ -654,6 +669,14 @@ class ConnectionHandler(object):
     async def disconnect(self, conn):
         self._del_connection(conn)
 
+    async def revoke_check(self):
+        now = datetime.datetime.now()
+        if self.lastCheck + self.revoke_check_timedelta < now:
+            now = datetime.datetime.now()
+            self.match_manager.check_matches_lifespan()
+            self.session_manager.revoke_inactive_sessions()
+            self.user_manager.revoke_inactive_accounts()
+
     async def handle_message(self, conn, msg_str):
         msg = parse_message(msg_str)
 
@@ -665,6 +688,7 @@ class ConnectionHandler(object):
         t = msg['type']
 
         self.user_manager.touch_user(conn.user_name)
+        self.session_manager.touch_session(conn.id)
         if t == "match_request":
             await self._on_match_req(conn, msg['data'])
 
@@ -685,3 +709,5 @@ class ConnectionHandler(object):
 
         else:
             debug("could not interpret message: " + msg_str)
+
+        await self.revoke_check()

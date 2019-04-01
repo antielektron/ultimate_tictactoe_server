@@ -1,3 +1,5 @@
+import datetime
+
 cert_file = None
 key_file = None
 
@@ -14,6 +16,13 @@ db_charset = 'utf8mb4'
 
 elo_start_value = 1000
 elo_default_k = 20
+
+# revoke times:
+account_revoke_time = datetime.timedelta(days=45)
+session_revove_time = datetime.timedelta(days=20)
+match_revoke_time = datetime.timedelta(days=7)
+
+revoke_check_interval = datetime.timedelta(hours=1)
 
 # field dimension (warning: this constant is not constantly used)
 n = 3

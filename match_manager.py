@@ -10,16 +10,18 @@ from tools import debug, elo_p_win, elo_update
 
 
 class MatchManager(object):
-    def __init__(self, user_manager: UserManager = None):
+    def __init__(self, user_manager: UserManager, match_lifespan_timedelta: datetime.timedelta):
         self.user_manager = user_manager
-        pass
+        self.match_lifespan_timedelta = match_lifespan_timedelta
 
     def get_match(self, id: str) -> Match:
         query = "SELECT * FROM matches WHERE id=%s"
         result = DatabaseConnection.global_single_query(query, (id))
         if len(result) == 0:
             return None
-        match = Match(n=settings.n, match_id=id, player_a_name=result[0]['user_a'],
+
+        revoke_time = result[0]['last_active'] + self.match_lifespan_timedelta
+        match = Match(n=settings.n, match_id=id, revoke_time=revoke_time, player_a_name=result[0]['user_a'],
                       player_b_name=result[0]['user_b'], json_state=result[0]['match_state'])
         return match
 
@@ -33,19 +35,22 @@ class MatchManager(object):
         if len(DatabaseConnection.global_single_query("SELECT id FROM matches WHERE id=%s", (match_id))) > 0:
             return self.create_new_match(user_a, user_b)
 
-        match = Match(n=settings.n, match_id=match_id,
-                      player_a_name=user_a, player_b_name=user_b)
         now = datetime.datetime.now()
+        match = Match(n=settings.n, match_id=match_id, revoke_time=now + self.match_lifespan_timedelta,
+                      player_a_name=user_a, player_b_name=user_b)
+        
         query = "INSERT INTO matches (id, user_a, user_b, match_state, active_user, last_active) VALUES (%s, %s, %s, %s, %s,%s)"
         DatabaseConnection.global_single_execution(
             query, (match_id, user_a, user_b, match.to_json_state(), match.get_current_player(), get_sql_time(now)))
         return match
 
-    def update_match(self, match_id: str, match: Match) -> None:
-        now = get_sql_time(datetime.datetime.now())
-        query = "UPDATE matches SET match_state=%s, active_user=%s, last_active=%s WHERE id=%s"
-        DatabaseConnection.global_single_execution(
-            query, (match.to_json_state(), match.get_current_player(), now, match_id))
+    def update_match(self, match_id: str, match: Match, update_in_db=True) -> None:
+
+        if (update_in_db):
+            now = get_sql_time(datetime.datetime.now())
+            query = "UPDATE matches SET match_state=%s, active_user=%s, last_active=%s WHERE id=%s"
+            DatabaseConnection.global_single_execution(
+                query, (match.to_json_state(), match.get_current_player(), now, match_id))
 
         # check whether we have to update the elo values (game over triggered by the last move)
         if match.game_over:
@@ -66,7 +71,7 @@ class MatchManager(object):
 
                 self.user_manager.update_elo(player_won, new_elo_won)
                 self.user_manager.update_elo(player_lost, new_elo_lost)
-                
+
                 debug(
                     f"Match {match_id} is won by {player_won} over {player_lost}. Update elo-rankings: {elo_won}->{new_elo_won} and {elo_lost}->{new_elo_lost}")
 
@@ -111,3 +116,32 @@ class MatchManager(object):
     def delete_match(self, match_id: str) -> None:
         query = "DELETE FROM matches WHERE id=%s"
         DatabaseConnection.global_single_execution(query, (match_id))
+
+    def check_matches_lifespan(self):
+        time_now = datetime.datetime.now()
+        time_revoke = time_now - self.match_lifespan_timedelta
+
+        query = "SELECT * FROM matches WHERE last_active < %s"
+        tmp = DatabaseConnection.global_single_query(
+            query, (get_sql_time(time_revoke)))
+
+        for entry in tmp:
+            revoke_time = entry['last_active'] + self.match_lifespan_timedelta
+            match = Match(n=settings.n, match_id=entry['id'], revoke_time=revoke_time, player_a_name=entry['user_a'],
+                          player_b_name=entry['user_b'], json_state=entry['match_state'])
+
+            if (not match.game_over):
+                match.game_over = True
+
+                # check who is the current player who did not make the move in time:
+                match.player_won = match.player_b_name if match.is_player_a else match.player_a_name
+
+                self.update_match(entry['id'], match, False)
+
+        # delete matches from db:
+
+        debug("deleting revoked sessions: " + str(tmp))
+
+        query = "DELETE FROM matches WHERE last_active < %s"
+        tmp = DatabaseConnection.global_single_execution(
+            query, (get_sql_time(time_revoke)))

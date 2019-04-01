@@ -14,10 +14,10 @@ import datetime
 
 from tools import debug
 
-um = UserManager()
-sm = SessionManager(datetime.timedelta(hours=12))
-mm = MatchManager(user_manager=um)
-ch = ConnectionHandler(sm, um, mm)
+um = UserManager(account_revoke_time)
+sm = SessionManager(session_revove_time)
+mm = MatchManager(um, match_revoke_time)
+ch = ConnectionHandler(sm, um, mm, revoke_check_interval)
 
 
 DatabaseConnection(db_host,

@@ -36,7 +36,13 @@ class DatabaseConnection(object):
         DatabaseConnection.instance.commit()
 
     @staticmethod
+    def global_ping():
+        assert DatabaseConnection.instance is not None
+        DatabaseConnection.instance.connection.ping()
+
+    @staticmethod
     def global_single_query(query, params=None):
+        DatabaseConnection.global_ping()
         if ';' in query:
             # Possible injection!
             raise SQLInjectionError()
@@ -51,6 +57,7 @@ class DatabaseConnection(object):
 
     @staticmethod
     def global_single_execution(sql_statement, params=None):
+        DatabaseConnection.global_ping()
         if ';' in sql_statement:
             # Possible injection detected!
             raise SQLInjectionError()

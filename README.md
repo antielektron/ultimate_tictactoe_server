@@ -38,6 +38,7 @@ communication with the web client is done by a (far from any standard and almost
     "type": "match_update",
     "data": {
         "id": "...",
+        "revoke_time": <revoke_time>,
         "match_state": <null| <match_state>>
     }
 }

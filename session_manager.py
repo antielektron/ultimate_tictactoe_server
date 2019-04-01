@@ -3,6 +3,8 @@ from user import User
 import datetime
 import uuid
 
+from tools import debug
+
 
 class SessionManager(object):
     def __init__(self, session_lifespan_timedelta):
@@ -65,4 +67,6 @@ class SessionManager(object):
         revoked_sessions = DatabaseConnection.global_single_query(query, (get_sql_time(revoke_time)))
         query = "DELETE FROM sessions WHERE last_seen < %s"
         DatabaseConnection.global_single_execution(query, (get_sql_time(revoke_time)))
-        return revoked_sessions
+        debug("delete revoked sessions: " + str(revoked_sessions))
+    
+

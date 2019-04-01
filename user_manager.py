@@ -1,13 +1,16 @@
-from database_connection import DatabaseConnection, SQLInjectionError
+from database_connection import DatabaseConnection, SQLInjectionError, get_sql_time
 from user import User
 import datetime
 import hashlib
 import uuid
 from settings import elo_start_value
 
+from tools import debug
+
 
 class UserManager(object):
-    def __init__(self):
+    def __init__(self, account_lifespan_timedelta):
+        self.account_lifespan_timedelta = account_lifespan_timedelta
         pass
 
     def get_user(self, user_name):
@@ -134,3 +137,14 @@ class UserManager(object):
     def get_all_users(self):
         query = "SELECT name, last_seen FROM users"
         return DatabaseConnection.global_single_query(query)
+    
+    def revoke_inactive_accounts(self):
+        revoke_time = datetime.datetime.now() - self.account_lifespan_timedelta
+        query = "SELECT * from users WHERE last_seen < %s"
+        revoked_sessions = DatabaseConnection.global_single_query(query, (get_sql_time(revoke_time)))
+
+        for entry in revoked_sessions:
+            name = entry['name']
+            self.delete_user(name)
+
+        debug("deleted users: " + str(revoked_sessions))

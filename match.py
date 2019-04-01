@@ -5,6 +5,8 @@ import base64
 
 from tools import debug
 
+from database_connection import get_sql_time
+
 # decoder/encoder took from: https://stackoverflow.com/a/19271311
 
 
@@ -36,7 +38,7 @@ class Match(object):
     FIELD_USER_B = 2
     FIELD_DRAW = 3
 
-    def __init__(self, n, match_id, player_a_name, player_b_name, json_state=None):
+    def __init__(self, n, match_id, revoke_time, player_a_name, player_b_name, json_state=None):
         self.n = n
         self.id = match_id
         self.complete_field = np.zeros(shape=(n*n, n*n), dtype=int)
@@ -48,9 +50,13 @@ class Match(object):
         self.is_player_a = True
         self.player_a_name = player_a_name
         self.player_b_name = player_b_name
+        self.revoke_time = revoke_time
 
         if json_state is not None:
             self.from_json_state(json_state)
+        
+    def get_sql_revoke_time(self):
+        return get_sql_time(self.revoke_time)
 
     def from_json_state(self, json_state):
         match_obj = json.loads(json_state)
@@ -155,6 +161,10 @@ class Match(object):
         return is_col or is_row or is_main_diag or is_sec_diag
 
     def move(self, move_dict):
+        if self.game_over:
+            debug("invalid move")
+            return False
+
         sub_x = int(move_dict['sub_x'])
         sub_y = int(move_dict['sub_y'])
         x = int(move_dict['x'])
