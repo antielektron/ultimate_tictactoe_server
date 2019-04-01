@@ -264,7 +264,7 @@ class ConnectionHandler(object):
                         "type": "match_update",
                         "data": {
                             "id": m.id,
-                            "revoke_time": m.revoke_time,
+                            "revoke_time": m.get_sql_revoke_time()
                             "match_state": state
                         }
                     }
@@ -277,7 +277,7 @@ class ConnectionHandler(object):
                         "type": "match_update",
                         "data": {
                             "id": m.id,
-                            "revoke_time": m.revoke_time,
+                            "revoke_time": m.get_sql_revoke_time(),
                             "match_state": state
                         }
                     }
