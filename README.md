@@ -1,4 +1,4 @@
-# ultimate_tictactoe_server
+# Ultimate TicTacToe Server
 
 a python server backend for ultimate tic-tac-toe.
 
@@ -16,24 +16,32 @@ setup the database connection settings in `settings.py`. If files for a certific
 
 ```json
 {
-    'complete_field': '[[...],[...],...]',
-    'global_field': '[[...],[...],...]',
-    'last_move': {
-        "sub_x": "...",
-        "sub_y": "...",
-        "x": "...",
-        "y": "..."
+    "complete_field": '[[...],[...],...]',
+    "global_field": '[[...],[...],...]',
+    "last_move": {
+        "sub_x": <int: xcoord of subfield of last move>,
+        "sub_y": <int: ycoord of subfield of last move>,
+        "x": <int: local xcoord in subfield of last move>,
+        "y": <int: local ycoord in subfield of last move>
     }
-    'game_over': <true | false>,
-    'is_draw': <true | false>,
-    'player_won': <null | <player_name>>,
-    'current_player': <null | <player_name>>,
-    'player_a': "...",
-    'player_b': "..."
+    "game_over": <true | false>,
+    "is_draw": <true | false>,
+    "player_won": <null | <player_name>>,
+    "current_player": <null | <player_name>>,
+    "player_a": "...",
+    "player_b": "..."
 }
 ```
 
+`complete_field` is of dimension 9x9, `global_field` of 3x3 (indicating the status of each subfield).
+The possible values for a single field are
 
+```
+FIELD_EMPTY = 0
+FIELD_USER_A = 1
+FIELD_USER_B = 2
+FIELD_DRAW = 3
+```
 
 **match**:
 
