@@ -672,7 +672,7 @@ class ConnectionHandler(object):
     async def revoke_check(self):
         now = datetime.datetime.now()
         if self.lastCheck + self.revoke_check_timedelta < now:
-            now = datetime.datetime.now()
+            self.lastCheck = datetime.datetime.now()
             self.match_manager.check_matches_lifespan()
             self.session_manager.revoke_inactive_sessions()
             self.user_manager.revoke_inactive_accounts()
