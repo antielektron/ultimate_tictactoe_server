@@ -5,33 +5,39 @@ a python server backend for ultimate tic-tac-toe.
 communication with the web client is done by a (far from any standard and almost random) json protocol:
 
 
+## setup server
 
-## new version:
+setup the database connection settings in `settings.py`. If files for a certificate are given, the websocket connection will be use the secured `wss://` websocket protocol instead of `ws://` (which is necessary if the client is accessed by `https://`). To create the necessary tables, the script `./create_database.py` can be used
+
+
+## communication protocol with client
 
 **json match state:**
 
 ```json
 {
-    complete_field: '[[...],[...],...]',
-    global_field: '[[...],[...],...]',
-    last_move: {
+    'complete_field': '[[...],[...],...]',
+    'global_field': '[[...],[...],...]',
+    'last_move': {
         "sub_x": "...",
         "sub_y": "...",
         "x": "...",
         "y": "..."
     }
-    game_over: <true | false>,
-    is_draw: <true | false>,
-    player_won: <null | <player_name>>,
-    current_player: <null | <player_name>>,
-    player_a: "...",
-    player_b: "..."
+    'game_over': <true | false>,
+    'is_draw': <true | false>,
+    'player_won': <null | <player_name>>,
+    'current_player': <null | <player_name>>,
+    'player_a': "...",
+    'player_b': "..."
 }
 ```
 
 
 
 **match**:
+
+server sends this to every user which is participating in a match if it's updated
 
 ```json
 {
@@ -45,10 +51,11 @@ communication with the web client is done by a (far from any standard and almost
 ```
 
 
-
-
-
 **new temp session**
+
+NOT IMPLEMENTED YET (and maybe never will be)
+
+give the possibility to temporary login without a password
 
 client
 
@@ -76,6 +83,8 @@ server response:
 
 **connect by session id**
 
+reconnect with the session id from the last session
+
 client
 
 ```json
@@ -101,6 +110,11 @@ server response:
 
 **login or register**:
 
+login with username and password. If the username does not exist yet, a new account
+is created automatically. After a successful login the server sends an elo update, friends update and match updates for each open match,.
+
+client:
+
 ```json
 {
     "type": "login",
@@ -111,7 +125,7 @@ server response:
 }
 ```
 
-response:
+server response:
 
 ```json
 {
@@ -125,12 +139,12 @@ response:
 ```
 
 
-
-
-
 **match_request**:
 
-client (or server for sending invites)
+will be send by clients. If `player` is `null` the player will be matched with the next (or previous)
+player which sent a request without a player name
+
+client:
 
 ```json
 {
@@ -155,6 +169,8 @@ server_response:
 
 **match_move**:
 
+sending moves to the server. The server will answer with a match update.
+
 client
 
 ```json
@@ -174,7 +190,7 @@ client
 
 **match update**
 
-(also send on match start and send for all matches after login)
+(is also sent on match start and send for all matches after login)
 
 server:
 
@@ -253,6 +269,8 @@ response:
 
 **friend update**:
 
+is sent by server after a login or reconnect
+
 ```json
 {
     "type": "friends_update",
@@ -266,6 +284,8 @@ response:
 
 
 **elo rank update**:
+
+is sent by server after login, reconnect or a finished match
 
 ```json
 {
