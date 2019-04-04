@@ -20,6 +20,7 @@ elo_default_k = 20
 # revoke times:
 account_revoke_time = datetime.timedelta(days=45)
 session_revove_time = datetime.timedelta(days=20)
+temporary_session_revoke_time = datetime.timedelta(hours=1)
 match_revoke_time = datetime.timedelta(days=7)
 
 revoke_check_interval = datetime.timedelta(hours=1)
