@@ -22,7 +22,7 @@ class MatchManager(object):
 
         revoke_time = result[0]['last_active'] + self.match_lifespan_timedelta
         match = Match(n=settings.n, match_id=id, revoke_time=revoke_time, player_a_name=result[0]['user_a'],
-                      player_b_name=result[0]['user_b'], json_state=result[0]['match_state'])
+                      player_b_name=result[0]['user_b'], json_state=result[0]['match_state'], ranked=result[0]['ranked'])
         return match
 
     def get_matches_for_user(self, user_name: str) -> list:
@@ -35,13 +35,16 @@ class MatchManager(object):
         if len(DatabaseConnection.global_single_query("SELECT id FROM matches WHERE id=%s", (match_id))) > 0:
             return self.create_new_match(user_a, user_b)
 
+        ranked = len(self.user_manager.get_user(user_a)) > 0 and len(
+            self.user_manager.get_user(user_b)) > 0
+
         now = datetime.datetime.now()
         match = Match(n=settings.n, match_id=match_id, revoke_time=now + self.match_lifespan_timedelta,
-                      player_a_name=user_a, player_b_name=user_b)
-        
-        query = "INSERT INTO matches (id, user_a, user_b, match_state, active_user, last_active) VALUES (%s, %s, %s, %s, %s,%s)"
+                      player_a_name=user_a, player_b_name=user_b, ranked=ranked)
+
+        query = "INSERT INTO matches (id, user_a, user_b, match_state, active_user, last_active, ranked) VALUES (%s, %s, %s, %s, %s,%s, %s)"
         DatabaseConnection.global_single_execution(
-            query, (match_id, user_a, user_b, match.to_json_state(), match.get_current_player(), get_sql_time(now)))
+            query, (match_id, user_a, user_b, match.to_json_state(), match.get_current_player(), get_sql_time(now), ranked))
         return match
 
     def update_match(self, match_id: str, match: Match, update_in_db=True) -> None:
@@ -53,7 +56,7 @@ class MatchManager(object):
                 query, (match.to_json_state(), match.get_current_player(), now, match_id))
 
         # check whether we have to update the elo values (game over triggered by the last move)
-        if match.game_over:
+        if match.game_over and match.ranked:
             if match.player_won is not None:
 
                 player_won = match.player_won

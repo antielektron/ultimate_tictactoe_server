@@ -141,11 +141,14 @@ class ConnectionHandler(object):
                         "success": True,
                         "id": conn.id,
                         "user": conn.user_name,
+                        "registered": conn.is_registered_user,
                         "msg": ""
                     }
                 }))
+
                 await self.send_elo(conn)
-                await self.send_friends(conn)
+                if conn.is_registered_user:
+                    await self.send_friends(conn)
                 await self._on_match_state_req(conn, None)
                 return conn
             await socket.send(json.dumps({
@@ -154,41 +157,8 @@ class ConnectionHandler(object):
                     "success": False,
                     "id": None,
                     "user": None,
+                    "registered": False,
                     "msg": "session not available"
-                }
-            }))
-            return None
-
-        elif msg['type'] == 'temp_session':
-            name = msg['data']['name'].lower()
-            if valid_name(name) and len(self.session_manager.get_session_by_temp_user(name)) == 0:
-                if len(self.user_manager.get_user(name)) == 0:
-                    if len(msg['data']['name']) < 16 and ';' not in name and '\'' not in name and '\"' not in name:
-                        id = self.session_manager.create_session_for_temp_user(
-                            name)
-
-                        conn = Connection(
-                            id=id, user_name=name, registered=False, websocket=socket)
-
-                        self._add_connection(conn)
-
-                        await socket.send(json.dumps({
-                            "type": "login_response",
-                            "data": {
-                                "success": True,
-                                "id": id,
-                                "msg": "logged in as temporary user " + name
-                            }
-                        }))
-
-                        return conn
-
-            await socket.send(json.dumps({
-                "type": "login_response",
-                "data": {
-                    "success": False,
-                    "id": None,
-                    "msg": "user name not available"
                 }
             }))
             return None
@@ -200,6 +170,7 @@ class ConnectionHandler(object):
             name = None
             pw = None
             conn = None
+            registered_user = True
 
             try:
 
@@ -225,15 +196,32 @@ class ConnectionHandler(object):
 
                     else:
                         response_msg = "invalid password for user " + name
+
+                elif valid_name(name) and len(name) <= 16 and len(pw) == 0:
+                    # no password -> temporary account
+                    registered_user = False
+
+                    # check whether already a temporary session exists for that user:
+                    if (len(self.session_manager.get_session_by_temp_user(name)) > 0) or (len(self.user_manager.get_user(name)) > 0):
+                        response_msg = f"user '{name}' already exists"
+                        success = False
+
+                    else:
+                        session_id = self.session_manager.create_session_for_temp_user(
+                            name)
+                        response_msg = f"created a temporary session for user {name}"
+                        success = True
+
                 else:
                     response_msg = "invalid username or pw. Only usernames containing alphanumerical symbols (including '_','-') between 3 and 16 characters are allowed!"
 
             except Exception as e:
+                print("error: " + str(e))
                 response_msg = "invalid username or pw. Only usernames containing alphanumerical symbols (including '_','-') between 3 and 16 characters are allowed!"
 
             if success:
                 conn = Connection(id=session_id, user_name=name,
-                                  registered=True, websocket=socket)
+                                  registered=registered_user, websocket=socket)
                 self._add_connection(conn)
 
             await socket.send(json.dumps({
@@ -241,6 +229,7 @@ class ConnectionHandler(object):
                 "data": {
                     "success": success,
                     "id": session_id,
+                    "registered": registered_user,
                     "msg": response_msg
                 }
             }))
@@ -265,6 +254,7 @@ class ConnectionHandler(object):
                         "data": {
                             "id": m.id,
                             "revoke_time": m.get_sql_revoke_time(),
+                            "ranked": m.ranked,
                             "match_state": state
                         }
                     }
@@ -278,6 +268,7 @@ class ConnectionHandler(object):
                         "data": {
                             "id": m.id,
                             "revoke_time": m.get_sql_revoke_time(),
+                            "ranked": m.ranked,
                             "match_state": state
                         }
                     }
@@ -355,7 +346,7 @@ class ConnectionHandler(object):
                 return
             try:
                 if valid_name(opponent):
-                    if len(self.user_manager.get_user(opponent)) > 0:
+                    if len(self.user_manager.get_user(opponent)) > 0 or len(self.session_manager.get_session_by_temp_user(opponent)) > 0:
 
                         if len(self.match_manager.get_matches_for_user(opponent)) >= 5:
                             await conn.websocket.send(
@@ -435,6 +426,7 @@ class ConnectionHandler(object):
                 "data": {
                     "id": db_match['id'],
                     "revoke_time": match.get_sql_revoke_time(),
+                    "ranked": match.ranked,
                     "match_state": json.loads(match.to_json_state())
                 }
             }))
@@ -469,6 +461,7 @@ class ConnectionHandler(object):
                     'data': {
                         'id': match.id,
                         'revoke_time': match.get_sql_revoke_time(),
+                        'ranked': match.ranked,
                         'match_state': json.loads(match_state)
                     }
                 }))
@@ -487,6 +480,7 @@ class ConnectionHandler(object):
                         'data': {
                             'id': match.id,
                             'revoke_time': match.get_sql_revoke_time(),
+                            'ranked': match.ranked,
                             'match_state': json.loads(match_state)
                         }
                     }))
@@ -507,34 +501,37 @@ class ConnectionHandler(object):
                     return
 
                 if not match.game_over:
-                    # check whether both player made a move. If so, the match is ranked as lost for the player who aborted the match
-                    if match.complete_field.__contains__(Match.FIELD_USER_A) and match.complete_field.__contains__(Match.FIELD_USER_B):
+                    if match.ranked:
+                        # check whether both player made a move. If so, the match is ranked as lost for the player who aborted the match
+                        if match.complete_field.__contains__(Match.FIELD_USER_A) and match.complete_field.__contains__(Match.FIELD_USER_B):
 
-                        # update rankings:
-                        player_lost = conn.user_name
-                        player_won = match.player_a_name if player_lost == match.player_b_name else match.player_b_name
+                            # update rankings:
+                            player_lost = conn.user_name
+                            player_won = match.player_a_name if player_lost == match.player_b_name else match.player_b_name
 
-                        elo_won = self.user_manager.get_elo(player_won)
-                        elo_lost = self.user_manager.get_elo(player_lost)
+                            elo_won = self.user_manager.get_elo(player_won)
+                            elo_lost = self.user_manager.get_elo(player_lost)
 
-                        # calculate elo values:
-                        p_won = elo_p_win(elo_won, elo_lost)
-                        p_lost = 1 - p_won
+                            # calculate elo values:
+                            p_won = elo_p_win(elo_won, elo_lost)
+                            p_lost = 1 - p_won
 
-                        new_elo_won = elo_update(elo_won, 1, p_won)
-                        new_elo_lost = elo_update(elo_lost, 0, p_lost)
+                            new_elo_won = elo_update(elo_won, 1, p_won)
+                            new_elo_lost = elo_update(elo_lost, 0, p_lost)
 
-                        self.user_manager.update_elo(player_won, new_elo_won)
-                        self.user_manager.update_elo(player_lost, new_elo_lost)
+                            self.user_manager.update_elo(
+                                player_won, new_elo_won)
+                            self.user_manager.update_elo(
+                                player_lost, new_elo_lost)
 
-                        await self.send_elo(conn)
+                            await self.send_elo(conn)
 
-                        if player_won in self.open_connections_by_user:
-                            other_conn = self.open_connections_by_user[player_won]
-                            await self.send_elo(other_conn)
+                            if player_won in self.open_connections_by_user:
+                                other_conn = self.open_connections_by_user[player_won]
+                                await self.send_elo(other_conn)
 
-                        debug(
-                            f"Match {match.id} is aborted by {player_lost} (against {player_won}). Update elo-rankings: {elo_won}->{new_elo_won} and {elo_lost}->{new_elo_lost}")
+                            debug(
+                                f"Match {match.id} is aborted by {player_lost} (against {player_won}). Update elo-rankings: {elo_won}->{new_elo_won} and {elo_lost}->{new_elo_lost}")
 
                 match.game_over = True
 
@@ -547,6 +544,7 @@ class ConnectionHandler(object):
                     'data': {
                         'id': match_id,
                         'revoke_time': match.get_sql_revoke_time(),
+                        'ranked': match.ranked,
                         'match_state': json.loads(match_state)
                     }
                 })
@@ -562,7 +560,7 @@ class ConnectionHandler(object):
             match_state = None
             if match is not None:
                 match_state = match.to_json_state()
-            
+
             if match_state is not None:
 
                 await conn.send(json.dumps({
@@ -570,6 +568,7 @@ class ConnectionHandler(object):
                     'data': {
                         'id': match.id,
                         'revoke_time': match.get_sql_revoke_time(),
+                        'ranked': match.ranked,
                         'match_state': json.loads(match_state)
                     }
                 }))
@@ -656,6 +655,18 @@ class ConnectionHandler(object):
 
         top_names, top_elos = self.user_manager.get_highscores(100, 0)
 
+        if not conn.is_registered_user:
+            await conn.send(json.dumps({
+                'type': 'elo_update',
+                'data': {
+                    'elo': None,
+                    'rank': None,
+                    'top_names': top_names,
+                    'top_elos': top_elos
+                }
+            }))
+            return
+
         await conn.send(json.dumps({
             'type': 'elo_update',
             'data': {
@@ -687,7 +698,8 @@ class ConnectionHandler(object):
 
         t = msg['type']
 
-        self.user_manager.touch_user(conn.user_name)
+        if conn.is_registered_user:
+            self.user_manager.touch_user(conn.user_name)
         self.session_manager.touch_session(conn.id)
         if t == "match_request":
             await self._on_match_req(conn, msg['data'])

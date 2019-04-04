@@ -7,8 +7,9 @@ from tools import debug
 
 
 class SessionManager(object):
-    def __init__(self, session_lifespan_timedelta):
+    def __init__(self, session_lifespan_timedelta, temp_session_lifespan_timedelta):
         self.session_lifespan_timedelta = session_lifespan_timedelta
+        self.temp_session_lifespan_timedelta = temp_session_lifespan_timedelta
 
     def get_session_by_id(self, session_id):
         query = "SELECT * FROM sessions WHERE id=%s"
@@ -16,7 +17,8 @@ class SessionManager(object):
 
     def touch_session(self, session_id):
         query = "UPDATE sessions SET last_seen=%s WHERE id=%s"
-        DatabaseConnection.global_single_execution(query, (datetime.datetime.now(), session_id))
+        DatabaseConnection.global_single_execution(
+            query, (datetime.datetime.now(), session_id))
 
     def get_session_by_registered_user(self, user_name):
         query = "SELECT * FROM sessions WHERE registered_user=%s"
@@ -38,7 +40,8 @@ class SessionManager(object):
         DatabaseConnection.global_single_execution(query, (user_name))
 
         query = "INSERT INTO sessions (id, registered_user, temp_user, last_seen) VALUES ( %s, %s, NULL, %s)"
-        DatabaseConnection.global_single_execution(query, (new_id, user_name, datetime.datetime.now()))
+        DatabaseConnection.global_single_execution(
+            query, (new_id, user_name, datetime.datetime.now()))
 
         return new_id
 
@@ -54,19 +57,38 @@ class SessionManager(object):
         DatabaseConnection.global_single_execution(query, (user_name))
 
         query = "INSERT INTO sessions (id, registered_user, temp_user, last_seen) VALUES ( %s, NULL, %s, %s)"
-        DatabaseConnection.global_single_execution(query, (new_id, user_name, datetime.datetime.now()))
+        DatabaseConnection.global_single_execution(
+            query, (new_id, user_name, datetime.datetime.now()))
         return new_id
 
     def delete_session(self, session_id):
         query = "DELETE FROM sessions WHERE id=%s"
         DatabaseConnection.global_single_execution(query, (session_id))
 
+    def revoke_inactive_temporary_sessions(self):
+        revoke_time = datetime.datetime.now() - self.temp_session_lifespan_timedelta
+        query = "SELECT * from sessions WHERE last_seen < %s AND temp_user IS NOT NULL"
+        revoked_temp_sessions = DatabaseConnection.global_single_query(
+            query, (get_sql_time(revoke_time)))
+
+        query = "DELETE FROM sessions WHERE last_seen < %s AND temp_user IS NOT NULL"
+        DatabaseConnection.global_single_execution(
+            query, (get_sql_time(revoke_time)))
+
+        for session in revoked_temp_sessions:
+            # remove from matches:
+            query = "DELETE FROM matches WHERE user_a=%s OR user_b=%s"
+            DatabaseConnection.global_single_execution(
+                query, (session['temp_user'], session['temp_user']))
+
+        debug("delete revoked sessions: " + str(revoked_temp_sessions))
+
     def revoke_inactive_sessions(self):
         revoke_time = datetime.datetime.now() - self.session_lifespan_timedelta
         query = "SELECT * from sessions WHERE last_seen < %s"
-        revoked_sessions = DatabaseConnection.global_single_query(query, (get_sql_time(revoke_time)))
+        revoked_sessions = DatabaseConnection.global_single_query(
+            query, (get_sql_time(revoke_time)))
         query = "DELETE FROM sessions WHERE last_seen < %s"
-        DatabaseConnection.global_single_execution(query, (get_sql_time(revoke_time)))
+        DatabaseConnection.global_single_execution(
+            query, (get_sql_time(revoke_time)))
         debug("delete revoked sessions: " + str(revoked_sessions))
-    
-

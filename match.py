@@ -38,7 +38,7 @@ class Match(object):
     FIELD_USER_B = 2
     FIELD_DRAW = 3
 
-    def __init__(self, n, match_id, revoke_time, player_a_name, player_b_name, json_state=None):
+    def __init__(self, n, match_id, revoke_time, player_a_name, player_b_name, json_state=None, ranked=False):
         self.n = n
         self.id = match_id
         self.complete_field = np.zeros(shape=(n*n, n*n), dtype=int)
@@ -51,6 +51,7 @@ class Match(object):
         self.player_a_name = player_a_name
         self.player_b_name = player_b_name
         self.revoke_time = revoke_time
+        self.ranked = ranked
 
         if json_state is not None:
             self.from_json_state(json_state)

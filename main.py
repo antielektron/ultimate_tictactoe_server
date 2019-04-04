@@ -15,7 +15,7 @@ import datetime
 from tools import debug
 
 um = UserManager(account_revoke_time)
-sm = SessionManager(session_revove_time)
+sm = SessionManager(session_revove_time, temporary_session_revoke_time)
 mm = MatchManager(um, match_revoke_time)
 ch = ConnectionHandler(sm, um, mm, revoke_check_interval)
 

@@ -39,6 +39,7 @@ communication with the web client is done by a (far from any standard and almost
     "data": {
         "id": "...",
         "revoke_time": <revoke_time>,
+        "ranked": "<true | false">,
         "match_state": <null| <match_state>>
     }
 }
@@ -101,12 +102,18 @@ server response:
 
 **login or register**:
 
+
+
+keep pw null for requesting a temporary session (will be deleted after one hour of inactivity and matches are not ranked)
+
+
+
 ```json
 {
     "type": "login",
     "data": {
    		"name": "<player_name>",
-   		"pw": "<password>"
+   		"pw": "<password> | null"
     }
 }
 ```
@@ -118,7 +125,8 @@ response:
     "type": "login_response",
     "data": {
         "success": <true|false>,
-        "id": "<session-id>", 
+        "id": "<session-id>",
+        "registered": <true | false>,
         "msg": "..."
     }
 }

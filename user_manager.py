@@ -61,8 +61,6 @@ class UserManager(object):
             query, (user_name, pw_hash, pw_salt, datetime.datetime.now(), elo_start_value))
 
     def touch_user(self, user_name):
-        matches = self.get_user(user_name)
-        assert len(matches) == 1
         query = "UPDATE users SET last_seen=%s WHERE name=%s"
         DatabaseConnection.global_single_execution(
             query, (datetime.datetime.now(), user_name))
