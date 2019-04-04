@@ -180,7 +180,8 @@ class ConnectionHandler(object):
                 if valid_name(name) and len(name) <= 16 and len(pw) <= 32 and len(name) > 0 and len(pw) > 0:
 
                     users = self.user_manager.get_user(name)
-                    if len(users) == 0:
+                    temp_sessions = self.session_manager.get_session_by_temp_user(name)
+                    if len(users) == 0 and len(temp_sessions) == 0:
                         # user does not exists:
                         self.user_manager.create_user(name, pw)
                         session_id = self.session_manager.create_session_for_registered_user(
@@ -195,7 +196,10 @@ class ConnectionHandler(object):
                         success = True
 
                     else:
-                        response_msg = "invalid password for user " + name
+                        if len(temp_sessions) == 0:
+                            response_msg = "invalid password for user " + name
+                        else:
+                            response_msg = f"the username {name} is currently not available"
 
                 elif valid_name(name) and len(name) <= 16 and len(pw) == 0:
                     # no password -> temporary account
