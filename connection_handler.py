@@ -585,6 +585,9 @@ class ConnectionHandler(object):
 
             # check for user:
             if valid_name(friend):
+                if not conn.is_registered_user:
+                    success = False
+                    msg = "you cannot have friends without an account"
                 if friend in self.user_manager.get_friends_for_user(conn.user_name):
                     success = False
                     msg = f"'{friend}' is already your friend"
