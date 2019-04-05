@@ -693,6 +693,7 @@ class ConnectionHandler(object):
             self.lastCheck = datetime.datetime.now()
             self.match_manager.check_matches_lifespan()
             self.session_manager.revoke_inactive_sessions()
+            self.session_manager.revoke_inactive_temporary_sessions()
             self.user_manager.revoke_inactive_accounts()
 
     async def handle_message(self, conn, msg_str):
